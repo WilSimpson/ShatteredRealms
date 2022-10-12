@@ -1,0 +1,14 @@
+<div class="container">
+  <div
+    [class]="getHTMLClasses()"
+    role="alert">
+    {{ message }}
+    <button
+      *ngIf="closeable"
+      (click)="notificationRef.close()"
+      type="button"
+      class="btn-close"
+      aria-label="Close">
+    </button>
+  </div>
+</div>

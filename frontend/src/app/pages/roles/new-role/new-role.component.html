@@ -1,0 +1,43 @@
+<section class="container mt-4">
+  <div class="row g-4">
+    <h2 class="col-12 text-center">
+      New Role
+    </h2>
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          Role Name
+        </div>
+        <div class="card-body">
+          <mdb-form-control>
+            <input mdbInput type="text" id="name" class="form-control" [(ngModel)]="name" />
+            <label mdbLabel class="form-label" for="name">Name</label>
+          </mdb-form-control>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title text-center">
+            Permissions
+          </h4>
+        </div>
+        <div class="card-body">
+          <app-permissions-table
+            [loading]="loading"
+            [dataSource]="permissions"
+            [searchable]="true"
+            [selectable]="true"
+            (outSelected)="setSelected($event)"
+          >
+          </app-permissions-table>
+        </div>
+        <div class="card-footer text-end">
+          <a [routerLink]="['..']" class="btn btn-light mx-2">Cancel</a>
+          <a class="btn btn-primary mx-2" (click)="createRole()">Save Changes</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

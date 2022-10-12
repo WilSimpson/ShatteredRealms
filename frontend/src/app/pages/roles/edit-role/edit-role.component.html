@@ -1,0 +1,52 @@
+<section class="container mt-4">
+  <div class="row g-4">
+    <h2 class="col-12 text-center">
+      Editing <span [class]="getRoleClasses()">{{ role?.name }}</span>
+    </h2>
+    <div class="col-md-6 col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          Change Name
+        </div>
+        <div class="card-body">
+          <div class="input-group mb-3">
+            <mdb-form-control>
+              <input mdbInput type="text" id="name" class="form-control" [(ngModel)]="newName"/>
+              <label mdbLabel class="form-label" for="name">Name</label>
+            </mdb-form-control>
+            <button class="btn btn-secondary" type="button" mdbRipple (click)="cancelNameChange()">
+              <i class="fas fa-times"></i>
+            </button>
+            <button class="btn btn-primary" type="button" id="save-name-btn" mdbRipple (click)="submitNameChange()">
+              <i class="fas fa-check"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title text-center">
+            Permissions
+          </h4>
+        </div>
+        <div class="card-body">
+          <app-permissions-table
+            [loading]="role == null"
+            [dataSource]="permissions"
+            [searchable]="true"
+            [selectable]="true"
+            [selected]="selected"
+            (outSelected)="setSelected($event)"
+          >
+          </app-permissions-table>
+        </div>
+        <div class="card-footer text-end">
+          <a [routerLink]="['..']" class="btn btn-light mx-2">Cancel</a>
+          <a class="btn btn-primary mx-2" (click)="saveChanges()">Save Changes</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

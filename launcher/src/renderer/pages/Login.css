@@ -1,0 +1,13 @@
+.form-input > input {
+  @apply w-full p-2 mb-2 outline-none
+         bg-gray-700 border border-gray-500
+         focus:bg-gray-900/70 focus:border-blue-400;
+}
+
+.form-input > input {
+  @apply outline-none;
+}
+
+body {
+  background-image: url('/assets/imgs/login-background.png');
+}

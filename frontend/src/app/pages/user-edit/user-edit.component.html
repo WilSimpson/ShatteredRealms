@@ -1,0 +1,187 @@
+<section class="container mt-4">
+  <div class="row g-4">
+    <div class="col-lg-6 col-md-12">
+      <div class="card text-center">
+        <div class="card-header">Account Details</div>
+        <form [formGroup]="updateDetailsForm">
+          <div class="card-body">
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                type="text"
+                id="firstName"
+                class="form-control"
+                formControlName="firstName"
+              />
+              <label mdbLabel class="form-label" for="firstName">First Name</label>
+            </mdb-form-control>
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="text"
+                id="lastName"
+                formControlName="lastName"
+                class="form-control"
+              />
+              <label mdbLabel class="form-label" for="lastName">Last Name</label>
+            </mdb-form-control>
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="email"
+                id="email"
+                formControlName="email"
+                class="form-control"
+              />
+              <label mdbLabel class="form-label" for="email">Email</label>
+            </mdb-form-control>
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="username"
+                id="username"
+                formControlName="username" class="form-control"/>
+              <label mdbLabel class="form-label" for="username">Username</label>
+            </mdb-form-control>
+          </div>
+          <div class="card-footer text-end">
+            <a
+              [routerLink]="['..']"
+              class="btn btn-light"
+            >
+              Cancel
+            </a>
+            <a
+              class="btn btn-primary ms-1"
+              (click)="onSubmitDetails()"
+            >
+              <div *ngIf="loadingUpdateDetails" class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span *ngIf="!loadingUpdateDetails">Save Changes</span>
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+      <div class="card text-center">
+        <div class="card-header">Password</div>
+        <form [formGroup]="updatePasswordForm">
+          <div class="card-body">
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="password"
+                id="currentPassword"
+                formControlName="currentPassword"
+                class="form-control"
+                autocomplete="current-password"
+              />
+              <label mdbLabel class="form-label" for="currentPassword">Current Password</label>
+            </mdb-form-control>
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="password"
+                id="newPassword"
+                formControlName="newPassword"
+                class="form-control"
+                autocomplete="new-password"
+              />
+              <label mdbLabel class="form-label" for="newPassword">New Password</label>
+            </mdb-form-control>
+
+            <mdb-form-control class="form-white mb-4">
+              <input
+                mdbInput
+                mdbValidate
+                [validateSuccess]="false"
+                type="password"
+                id="confirmNewPassword"
+                formControlName="confirmNewPassword"
+                class="form-control"
+                autocomplete="new-password"
+              />
+              <label mdbLabel class="form-label" for="confirmNewPassword">Confirm New Password</label>
+            </mdb-form-control>
+          </div>
+          <div class="card-footer text-end">
+            <a
+              [routerLink]="['..']"
+              class="btn btn-light"
+            >
+              Cancel
+            </a>
+            <a
+              class="btn btn-primary ms-1"
+              (click)="onSubmitPassword()"
+            >
+              <div *ngIf="loadingUpdatePassword" class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span *ngIf="!loadingUpdatePassword">Save Changes</span>
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <ng-container *ngIf="isAdmin()">
+      <div class="col-lg-6 col-md-12">
+        <div class="card text-center">
+          <h4 class="card-header">
+            Roles
+            <button
+              class="btn btn-sm btn-outline-primary btn-floating mx-2"
+              (click)="openAddRolesModal()"
+            >
+             <i class="fas fa-plus"></i>
+            </button>
+            <button
+              class="btn btn-sm btn-outline-warning btn-floating mx-2"
+              (click)="openRemRolesModal()"
+            >
+              <i class="fas fa-minus"></i>
+            </button>
+          </h4>
+          <div class="card-body p-0">
+            <app-roles-table
+              [loading]="loadingUser"
+              [dataSource]="user ? user.roles : []"
+            ></app-roles-table>
+          </div>
+          <div class="card-footer"></div>
+        </div>
+      </div>
+      <div class="col-lg-6 col-md-12">
+        <div class="card text-center">
+          <div class="card-header">Additional Permissions</div>
+          <div class="card-body">
+            <app-permissions-table
+              [loading]="loadingUser"
+              [dataSource]="user ? user.permissions : []"
+            ></app-permissions-table>
+          </div>
+          <div class="card-footer"></div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</section>

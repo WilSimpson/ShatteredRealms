@@ -1,0 +1,24 @@
+# JetBrains IDEs
+.idea
+
+# Output Binaries
+bin
+
+# Vendor files
+vendor
+
+# Testing files
+*.test
+coverage.out
+coverage.html
+
+# Environment files
+.env
+
+/test/tls/
+
+# Production files
+*_prod*
+
+# VSCode IDE
+.vscode

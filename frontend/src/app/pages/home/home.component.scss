@@ -1,0 +1,36 @@
+@import 'node_modules/mdb-angular-ui-kit/assets/scss/bootstrap/functions';
+@import 'node_modules/mdb-angular-ui-kit/assets/scss/bootstrap/variables';
+@import 'node_modules/mdb-angular-ui-kit/assets/scss/bootstrap/mixins';
+
+.background-blend {
+  background: radial-gradient(
+    rgba(48, 48, 48, 0),
+    rgba(48, 48, 48, 1) 65%
+  );
+}
+
+@include media-breakpoint-up(md) {
+  .hero-image > img {
+    width: 100%;
+    height: auto;
+    float: right;
+    max-width: none;
+    transform: translateX(15%);
+  }
+
+  .hero-content {
+    transform: translateX(-15%);
+  }
+}
+
+
+@include media-breakpoint-down(sm) {
+  .hero-image > img {
+    width: auto;
+    height: 500px;
+    margin: auto;
+    overflow: hidden;
+    max-width: 100%;
+    object-fit: cover;
+  }
+}

@@ -1,0 +1,35 @@
+syntax = "proto3";
+package sro.chat;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service ChatService {
+  rpc Connect(ConnectRequest) returns (stream ChatMessage) {
+    option (google.api.http) = {
+      get: "/v1/connect/{channel_id}"
+    };
+  }
+
+  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/message/{channel_id}"
+      body: "*"
+    };
+  }
+}
+
+message ConnectRequest {
+  uint64 channel_id = 1;
+}
+
+message ChatMessage {
+  string message = 1;
+  string sender = 2;
+}
+
+message SendMessageRequest {
+  uint64 channel_id = 1;
+  string message = 2;
+}

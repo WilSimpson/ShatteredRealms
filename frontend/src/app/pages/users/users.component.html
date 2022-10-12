@@ -1,0 +1,29 @@
+<section class="user-info container">
+  <div class="quick-info row">
+    <div class="col-md-12 col-lg-6 d-flex ml-1">
+      <div class="profile-picture"><i class="far fa-user"></i></div>
+      <div class="profile-info">
+        <div class="text-muted">{{this.user.email}}</div>
+        <h4 class="text-light mb-0">{{this.user.first_name}} {{this.user.last_name}}</h4>
+        <div class="profile-status"><span class="badge bg-success">Online</span></div>
+        <button class="btn btn-sm btn-outline-primary">Edit Details</button>
+      </div>
+    </div>
+    <div class="profile-stats col-md-12 col-lg-6 text-center mt-lg-0 mt-4">
+      <div class="profile-stats-wrapper d-flex justify-content-between px-3 px-sm-5">
+        <div class="stat">
+          <h6 class="text-muted">PLAY TIME</h6>
+          <h5 class="text-light">0 hours</h5>
+        </div>
+        <div class="stat">
+          <h6 class="text-muted">CHARACTERS</h6>
+          <h5 class="text-light">0</h5>
+        </div>
+        <div class="stat">
+          <h6 class="text-muted">JOINED</h6>
+          <h5 class="text-light">{{this.user.created_at | date: 'MM/dd/yyyy'}}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

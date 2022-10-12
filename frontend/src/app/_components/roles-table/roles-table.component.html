@@ -1,0 +1,108 @@
+<div class="input-group mb-4" *ngIf="searchable">
+  <input
+    type="text"
+    id="advanced-search"
+    class="form-control"
+    id="search-input"
+    #searchInput
+    placeholder="Search for..."
+  />
+  <button
+    class="btn btn-primary ripple-surface"
+    id="advanced-search-button"
+    type="button"
+    (click)="search(searchInput.value)"
+  >
+    <i class="fa fa-search"></i>
+  </button>
+</div>
+<div class="datatable">
+  <div class="datatable-inner" mdbScrollbar style="position: relative">
+    <table
+      class="table datatable-table table-dark table-hover"
+      mdbTable
+      mdbTableSort
+      #table="mdbTable"
+      #sort="mdbTableSort"
+      [dataSource]="dataSource"
+      [sort]="sort"
+      [pagination]="pagination"
+      [fixedHeader]="true"
+    >
+      <thead class="datatable-header">
+      <tr>
+        <th
+          [mdbTableSortHeader]="'id'"
+          scope="col"
+        >
+          ID
+        </th>
+        <th
+          [mdbTableSortHeader]="'name'"
+          scope="col"
+        >
+          Name
+        </th>
+        <th
+          *ngIf="showActions"
+          scope="col"
+        >
+          Actions
+        </th>
+      </tr>
+      </thead>
+      <tbody class="datatable-body" *ngIf="!loading">
+      <tr
+        *ngFor="let role of table.data"
+        (click)="roleClicked(role)"
+        scope="row"
+      >
+        <td>
+          {{ role.id}}
+        </td>
+        <td>
+          <span
+            class="badge m-1"
+            [class]="getRoleHTMLClass(role)"
+          >
+            {{ role.name }}
+          </span>
+        </td>
+        <td *ngIf="showActions">
+          <a
+            (click)="$event.stopPropagation(); roleEditClicked(role)"
+            mdbTooltip="Edit Role"
+            [delayShow]="500"
+            [offset]="10"
+            [trigger]="'hover'"
+          >
+            <button class="messhandle-btn btn btn-primary btn-floating btn-sm ms-2 ">
+              <i class="fa fa-edit"></i>
+            </button>
+          </a>
+          <a
+            (click)="$event.stopPropagation(); roleDeleteClicked(role)"
+            mdbTooltip="Delete Role"
+            [delayShow]="500"
+            [offset]="10"
+            [trigger]="'hover'"
+          >
+            <button class="messhandle-btn btn btn-danger btn-floating btn-sm ms-2 ">
+              <i class="fa fa-trash"></i>
+            </button>
+          </a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <ng-container *ngIf="loading">
+      <div class="datatable-loader bg-light">
+        <span class="datatable-loader-inner">
+          <span class="datatable-progress bg-primary"></span>
+        </span>
+      </div>
+      <p class="text-center text-muted my-4">Loading roles...</p>
+    </ng-container>
+  </div>
+  <mdb-table-pagination #pagination></mdb-table-pagination>
+</div>

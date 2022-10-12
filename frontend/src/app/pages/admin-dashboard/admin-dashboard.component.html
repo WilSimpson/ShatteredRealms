@@ -1,0 +1,36 @@
+<section class="container mt-4">
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="card text-center">
+        <div class="card-header">All Users</div>
+        <div class="card-body">
+          <app-users-table
+            [dataSource]="users"
+            [loading]="loadingUsers"
+          ></app-users-table>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card text-center">
+        <div class="card-header">
+          All Roles
+          <a
+            class="btn btn-sm btn-outline-primary btn-floating mx-2"
+            routerLink="/roles/new"
+          >
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <app-roles-table
+            [dataSource]="roles"
+            [loading]="loadingRoles"
+            [showActions]="true"
+          ></app-roles-table>
+        </div>
+        <div class="card-footer"></div>
+      </div>
+    </div>
+  </div>
+</section>

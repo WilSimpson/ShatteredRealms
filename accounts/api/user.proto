@@ -1,0 +1,109 @@
+syntax = "proto3";
+package sro.accounts;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "authorization.proto";
+
+service UserService {
+  rpc GetAll(google.protobuf.Empty) returns (GetAllUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+  }
+
+  rpc Get(GetUserMessage) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}"
+    };
+  }
+
+  rpc Edit(UserDetails) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/users/{user_id}"
+      body: "*"
+    };
+  }
+
+  rpc Ban(GetUserMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/ban"
+      body: "*"
+    };
+  }
+
+  rpc UnBan(GetUserMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/unban"
+      body: "*"
+    };
+  }
+
+  rpc GetStatus(GetUserMessage) returns (StatusResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/status"
+    };
+  }
+
+  rpc SetStatus(StatusRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/status"
+      body: "*"
+    };
+  }
+}
+
+message GetUserMessage {
+  uint64 user_id = 1;
+}
+
+message UserMessage {
+  uint64 id = 1;
+  string email = 2;
+  string username = 3;
+  string createdAt = 4;
+  repeated UserRole roles = 5;
+  string bannedAt = 6;
+
+  // The character id that is currently playing. If 0, then the user is not playing online.
+  uint64 current_character_id = 7;
+}
+
+message GetUserResponse {
+  uint64 id = 1;
+  string email = 2;
+  string username = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string createdAt = 6;
+  repeated UserRole roles = 7;
+  repeated UserPermission permissions = 8;
+  string bannedAt = 9;
+  uint64 current_character_id = 10;
+}
+
+message GetAllUsersResponse {
+  repeated UserMessage users = 1;
+}
+
+message UserDetails {
+  uint64 user_id = 1;
+  string email = 2;
+  string password = 3;
+  string username = 4;
+  string first_name = 5;
+  string last_name = 6;
+}
+
+message StatusResponse {
+  // The character id that is currently playing. If 0, then the user is not signed in.
+  uint64 character_id = 1;
+}
+
+message StatusRequest {
+  uint64 user_id = 1;
+
+  // The character id that is currently playing. If 0, then the user is not signed in.
+  uint64 character_id = 2;
+}

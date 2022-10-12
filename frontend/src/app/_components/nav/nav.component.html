@@ -1,0 +1,63 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand text-primary" [routerLink]="['/']">Shattered Realms</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      (click)="togglerSecondExample.toggle()"
+      aria-controls="navbarTogglerDemo02"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+    <div
+      class="collapse navbar-collapse"
+      id="navbarTogglerDemo02"
+      mdbCollapse
+      #togglerSecondExample="mdbCollapse"
+    >
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" [routerLink]="['/']">Home</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto mb-2 mb-lg-0">
+        <li *ngIf="!isUserSignedIn()" class="nav-item text-center">
+          <a class="nav-link" [routerLink]="['/login']">Login</a>
+        </li>
+        <li *ngIf="!isUserSignedIn()" class="nav-item text-center">
+          <a class="nav-link" [routerLink]="['/register']">Register</a>
+        </li>
+        <div *ngIf="isScreenSmall$ | async; then smallScreen else largeScreen"></div>
+        <ng-template #largeScreen>
+          <li *ngIf="isUserSignedIn()" class="nav-item dropdown" mdbDropdown>
+            <a mdbDropdownToggle class="nav-link dropdown-toggle"><i class="far fa-user-circle fa-lg"></i></a>
+            <div mdbDropdownMenu class="dropdown-menu dropdown-menu-dark dropdown" role="menu">
+              <a class="dropdown-item col-sm-12" [routerLink]="['/users', this.authService.currentUserValue?.id]">Profile</a>
+              <a class="dropdown-item col-sm-12" style="cursor: pointer" (click)="signOutUser()">Logout</a>
+            </div>
+          </li>
+        </ng-template>
+        <ng-template #smallScreen>
+          <div *ngIf="isUserSignedIn()">
+            <hr class="text-light"/>
+            <div class="d-flex">
+              <li class="nav-item text-center col-6">
+                <a class="nav-link" [routerLink]="['/users', this.authService.currentUserValue?.id]">Profile</a>
+              </li>
+              <li class="nav-item text-center col-6">
+                <a class="nav-link" style="cursor: pointer" (click)="signOutUser()">Logout</a>
+              </li>
+            </div>
+          </div>
+        </ng-template>
+        <li class="nav-item">
+          <a class="nav-link btn btn-primary text-dark" href="https://downloads.shatteredrealmsonline.com/launcher/ShatteredRealmsOnlineLauncherSetup-0.0.3.exe">Download</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<ng-template #elseBlock>There</ng-template>

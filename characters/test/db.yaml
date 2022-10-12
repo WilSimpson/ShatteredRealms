@@ -1,0 +1,7 @@
+master:
+  host: localhost
+  port: 5432
+  name: characters
+  user: postgres
+  pass: password
+slaves: []

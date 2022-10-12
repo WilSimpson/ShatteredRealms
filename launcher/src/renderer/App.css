@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  color: white;
+  font-family: 'Roboto', sans-serif;
+  overflow: hidden;
+}
+
+.logo {
+  background-image: url('/assets/imgs/WhiteLogo.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+}

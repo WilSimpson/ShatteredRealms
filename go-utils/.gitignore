@@ -1,0 +1,17 @@
+# JetBrains IDEs
+.idea
+
+# Vendor files
+vendor
+
+# Testing files
+*.test
+coverprofile.out
+
+# Environment files
+.env
+
+/test/tls/
+
+# Production files
+*_prod*

@@ -1,0 +1,52 @@
+<section class="container mt-4">
+  <div class="row g-4">
+    <div class="col-md-12 col-xl-6 col-xxl-4">
+      <div class="card">
+        <div class="d-flex">
+          <div class="profile-picture"><i class="far fa-user"></i></div>
+          <div class="card-body">
+            <p class="text-muted mb-0">{{this.user?.email}}</p>
+            <h4 class="text-light mb-0">{{this.user?.firstName}} {{this.user?.lastName}}</h4>
+            <p>
+              <span class="badge bg-success mx-1">Online</span>
+              <span
+                *ngFor="let role of user?.roles" class="badge mx-1 mt-1"
+                [className]="getRoleHTMLClass(role)"
+              >
+                  {{ role.name }}
+                </span>
+            </p>
+            <p class="card-text">
+              <a [routerLink]="['/users', user?.id, 'edit']">
+                <span class="btn btn-sm btn-outline-primary">Edit Details</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-group col-md-12 col-xl-6 col-xxl-8">
+      <div class="card text-center">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-4">
+              <h5 class="card-title">PLAY TIME</h5>
+              <p class="card-text">0 Hours</p>
+            </div>
+            <div class="col-4">
+              <h5 class="card-title">CHARACTERS</h5>
+              <p class="card-text">0</p>
+            </div>
+            <div class="col-4">
+              <h5 class="card-title">JOINED</h5>
+              <p class="card-text">{{this.user?.createdAt | date: 'mediumDate'}}</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <small class="text-muted">Last updated right now</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,98 @@
+<div class="input-group mb-4" *ngIf="searchable">
+  <input
+    type="text"
+    id="advanced-search"
+    class="form-control"
+    id="search-input"
+    #searchInput
+    placeholder="Search for..."
+  />
+  <button
+    class="btn btn-primary ripple-surface"
+    id="advanced-search-button"
+    type="button"
+    (click)="search(searchInput.value)"
+  >
+    <i class="fa fa-search"></i>
+  </button>
+</div>
+<div class="datatable">
+  <div class="datatable-inner" mdbScrollbar style="position: relative">
+    <table
+      class="table datatable-table"
+      mdbTable
+      mdbTableSort
+      #table="mdbTable"
+      #sort="mdbTableSort"
+      [dataSource]="dataSource"
+      [sort]="sort"
+      [pagination]="pagination"
+      [fixedHeader]="true"
+    >
+      <thead class="datatable-header">
+      <tr>
+        <th *ngIf="selectable">
+          <input
+            mdbCheckbox
+            type="checkbox"
+            class="datatable-row-checkbox form-check-input"
+            [checked]="areAllChecked()"
+            (checkboxChange)="toggleAll($event)"
+          />
+        </th>
+        <th
+          [mdbTableSortHeader]="'id'"
+          scope="col"
+        >
+          Permission
+        </th>
+        <th
+          [mdbTableSortHeader]="'name'"
+          scope="col"
+        >
+          Others
+        </th>
+      </tr>
+      </thead>
+      <tbody class="datatable-body" *ngIf="!loading">
+      <tr *ngFor="let permission of table.data" scope="row">
+        <td *ngIf="selectable">
+          <input
+            mdbCheckbox
+            type="checkbox"
+            class="datatable-row-checkbox form-check-input"
+            (click)="$event.stopPropagation()"
+            (checkboxChange)="toggleSelection($event, permission)"
+            [checked]="selected.has(permission)"
+          />
+        </td>
+        <td>
+          {{ permission.permission }}
+        </td>
+        <td>
+          <div class="form-check form-switch">
+            <input
+              mdbCheckbox
+              class="form-check-input"
+              type="checkbox"
+              [checked]="permission.other"
+              (checkboxChange)="permission.other = !permission.other"
+              [disabled]="!selectable"
+            />
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <ng-container *ngIf="loading">
+      <div class="datatable-loader bg-light">
+        <span class="datatable-loader-inner">
+          <span class="datatable-progress bg-primary"></span>
+        </span>
+      </div>
+      <p class="text-center text-muted my-4">Loading permissions...</p>
+    </ng-container>
+  </div>
+  <mdb-table-pagination #pagination></mdb-table-pagination>
+</div>
+

@@ -1,0 +1,140 @@
+<div class="input-group mb-4">
+  <input
+    type="text"
+    class="form-control"
+    id="search-input"
+    #searchInput
+    placeholder="phrase in:field1,field2"
+  />
+  <button
+    class="btn btn-primary ripple-surface"
+    id="advanced-search-button"
+    type="button"
+    (click)="advancedSearch(searchInput.value)"
+  >
+    <i class="fa fa-search"></i>
+  </button>
+</div>
+<div class="datatable mt-4">
+  <div class="datatable-inner" mdbScrollbar style="position: relative">
+    <table
+      class="table datatable-table table-dark table-hover"
+      mdbTable
+      mdbTableSort
+      #table="mdbTable"
+      #sort="mdbTableSort"
+      [dataSource]="dataSource"
+      [sort]="sort"
+      [pagination]="pagination"
+      [filterFn]="filterFn"
+      [fixedHeader]="true"
+    >
+      <thead class="datatable-header">
+      <tr>
+        <th [mdbTableSortHeader]="'id'" scope="col">
+          ID
+        </th>
+        <th [mdbTableSortHeader]="'roles'" scope="col">
+          Roles
+        </th>
+        <th [mdbTableSortHeader]="'username'" scope="col">
+          Username
+        </th>
+        <th [mdbTableSortHeader]="'email'" scope="col">
+          Email
+        </th>
+        <th [mdbTableSortHeader]="'createdAt'" scope="col">
+          Creation Date
+        </th>
+        <th [mdbTableSortHeader]="'bannedAt'" scope="col">
+          Ban Date
+        </th>
+        <th scope="col">
+          Actions
+        </th>
+      </tr>
+      </thead>
+      <tbody *ngIf="!loading">
+      <tr
+        *ngFor="let user of table.data"
+        (click)="onUserClick(user)"
+        class="user-row"
+        scope="row"
+      >
+        <td>
+          {{ user.id}}
+        </td>
+        <td>
+          <span
+            *ngFor="let role of user.roles" class="badge m-1"
+            [class]="getRoleHTMLClasses(role)"
+          >
+            {{ role.name }}
+          </span>
+        </td>
+        <td>
+          {{ user.username }}
+        </td>
+        <td>
+          {{ user.email }}
+        </td>
+        <td>
+          {{ user.createdAt | date: 'mediumDate' }}
+        </td>
+        <td>
+          {{ user.bannedAt | date: 'mediumDate' }}
+        </td>
+        <td>
+          <a
+            (click)="$event.stopPropagation(); onUserEditClick(user)"
+            mdbTooltip="Edit User"
+            [delayShow]="500"
+            [offset]="10"
+            [trigger]="'hover'"
+          >
+            <button class="btn btn-primary btn-floating btn-sm ms-2 ">
+              <i class="fa fa-edit"></i>
+            </button>
+          </a>
+          <div *ngIf="isNaN(user.bannedAt);then unbanButton else banButton"></div>
+          <ng-template #banButton>
+            <a
+              (click)="$event.stopPropagation(); banUser(user.id)"
+              mdbTooltip="Ban User"
+              [delayShow]="500"
+              [offset]="10"
+              [trigger]="'hover'"
+            >
+              <button class="btn btn-floating ms-2 btn-sm">
+                <i class="fa fa-ban text-danger"></i>
+              </button>
+            </a>
+          </ng-template>
+          <ng-template #unbanButton>
+            <a
+              (click)="$event.stopPropagation(); unbanUser(user.id)"
+              mdbTooltip="Unban User"
+              [delayShow]="500"
+              [offset]="10"
+              [trigger]="'hover'"
+            >
+              <button class="btn btn-floating ms-2 btn-sm">
+                <i class="fas fa-unlock text-warning"></i>
+              </button>
+            </a>
+          </ng-template>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <ng-container *ngIf="loading">
+      <div class="datatable-loader bg-light">
+        <span class="datatable-loader-inner">
+          <span class="datatable-progress bg-primary"></span>
+        </span>
+      </div>
+      <p class="text-center text-muted my-4">Loading users...</p>
+    </ng-container>
+  </div>
+  <mdb-table-pagination #pagination></mdb-table-pagination>
+</div>

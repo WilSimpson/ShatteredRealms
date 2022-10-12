@@ -1,0 +1,23 @@
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
+@import '~@fortawesome/fontawesome-free/scss/regular.scss';
+@import '~@fortawesome/fontawesome-free/scss/brands.scss';
+
+@import '~mdb-angular-ui-kit/assets/scss/mdb.scss';
+
+$primary: #66D0FF;
+$secondary: #F43838;
+
+$my-dark-theme: mdb-dark-theme($primary, $secondary); // create the new dark theme using primary and secondary colors
+
+// include theme styles
+.dark {
+  @include mdb-theme($my-dark-theme);
+}
+
+html,body
+{
+  background-color: $dark;
+  overflow-x: hidden;
+}
+

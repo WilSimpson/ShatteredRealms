@@ -1,0 +1,38 @@
+@import "~src/variables";
+
+.profile-picture {
+  height: 200px;
+  width: 200px;
+  background-color: $semi-dark;
+  text-align: center;
+  padding-top: 1rem;
+  > i {
+    font-size: 10rem;
+  }
+}
+
+.profile-info {
+  align-items: center;
+  padding-top: 2rem;
+  margin-left: 1rem;
+}
+
+.profile-status {
+  margin-bottom: 1rem;
+}
+
+.profile-stats {
+  //padding: 0.5rem 2rem;
+  > .profile-stats-wrapper {
+    padding: 4rem 0;
+    width: 100%;
+    background-color: $semi-dark;
+    border-radius: 1.5rem;
+    position: relative;
+  }
+
+  > h6, h5 {
+    margin: 0;
+    padding: 0;
+  }
+}

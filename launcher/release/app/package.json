@@ -1,0 +1,17 @@
+{
+  "name": "shattered-realms-online-launcher",
+  "version": "0.0.3",
+  "description": "Launcher for Shattered Realms Online",
+  "author": {
+    "name": "Shattered Realms Online Developers",
+    "email": "wil@forever.dev",
+    "url": "https://forever.dev"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run electron-rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {}
+}

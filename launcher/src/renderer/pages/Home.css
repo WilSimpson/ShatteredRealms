@@ -1,0 +1,10 @@
+.main-bg {
+  background-image: url('/assets/imgs/main-background.png');
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.percentage {
+  width: 10%;
+}
