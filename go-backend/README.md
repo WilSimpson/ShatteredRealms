@@ -1,5 +1,4 @@
-# Overview [![Build](https://github.com/WilSimpson/ShatteredRealms/go-backend/actions/workflows/build.yml/badge.svg)](https://github.com/WilSimpson/ShatteredRealms/go-backend/actions/workflows/build.yml) [![codecov](https://codecov.io/gh/ShatteredRealms/Accounts/branch/main/graph/badge.svg?token=P01UR012I1)](https://codecov.io/gh/ShatteredRealms/Accounts)
-The Golang microservices for [Shattered Realms Online](https://github.com/ShatteredRealms/Game). 
+# Overview 
 
 * `accounts` - User accounts authentication and and authorization.
 * `characters` - User playable characters management.
