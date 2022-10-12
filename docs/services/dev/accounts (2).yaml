@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: accounts
-  namespace: sro-qa
+  namespace: sro-dev
   labels:
     app: accounts
     version: v1
@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: accounts
-          image: 779965382548.dkr.ecr.us-east-1.amazonaws.com/sro/accounts/qa:latest
+          image: 779965382548.dkr.ecr.us-east-1.amazonaws.com/sro/accounts/dev:latest
           imagePullPolicy: Always
           env:
             - name: PS_AUTH_JWT_PRIVATE_KEY_PATH
@@ -49,13 +49,13 @@ spec:
                 path: key.pub
         - name: sro-db
           secret:
-            secretName: database
+            secretName: accounts-database
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: accounts
-  namespace: sro-qa
+  namespace: sro-dev
   labels:
     app: accounts
     service: accounts
@@ -73,7 +73,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: database
-  namespace: sro-qa
+  name: accounts-database
+  namespace: sro-dev
 data:
   db.yaml: '{{DATABASE_FILE}}'

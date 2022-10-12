@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: accounts
-  namespace: sro-qa
+  namespace: sro
   labels:
     app: accounts
     version: v1
@@ -20,14 +20,12 @@ spec:
     spec:
       containers:
         - name: accounts
-          image: 779965382548.dkr.ecr.us-east-1.amazonaws.com/sro/accounts/qa:latest
+          image: 779965382548.dkr.ecr.us-east-1.amazonaws.com/sro/accounts:latest
+          ports:
+          - containerPort: 8080
           imagePullPolicy: Always
           env:
-            - name: PS_AUTH_JWT_PRIVATE_KEY_PATH
-              value: "/etc/sro/auth/keys/key"
-            - name: PS_AUTH_JWT_PUBLIC_KEY_PATH
-              value: "/etc/sro/auth/keys/key.pub"
-            - name: SRO_AUTH_MODE
+            - name: SRO_ACCOUNTS_MODE
               value: "release"
           volumeMounts:
             - name: jwt-certs
@@ -49,13 +47,13 @@ spec:
                 path: key.pub
         - name: sro-db
           secret:
-            secretName: database
+            secretName: accounts-database
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: accounts
-  namespace: sro-qa
+  namespace: sro
   labels:
     app: accounts
     service: accounts
@@ -68,12 +66,11 @@ spec:
     - port: 80
       targetPort: 8080
       protocol: TCP
-      name: http
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: database
-  namespace: sro-qa
+  name: accounts-database
+  namespace: sro
 data:
   db.yaml: '{{DATABASE_FILE}}'
