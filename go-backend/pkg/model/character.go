@@ -3,7 +3,6 @@ package model
 import (
 	"errors"
 	"fmt"
-	"github.com/ShatteredRealms/gamebackend/pkg/model"
 	goaway "github.com/TwiN/go-away"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"gorm.io/gorm"
@@ -82,7 +81,7 @@ type Character struct {
 	PlayTime uint64 `gorm:"not null" json:"play_time"`
 
 	// Location last location recorded for the character
-	Location model.Location `gorm:"type:bytes;serializer:gob" json:"location"`
+	Location Location `gorm:"type:bytes;serializer:gob" json:"location"`
 }
 
 func (c *Character) Validate() error {

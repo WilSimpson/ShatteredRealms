@@ -21,7 +21,7 @@ type config struct {
 	AgonesCaCertFile    string `yaml:"agonesCaCertFile"`
 	AgonesNamespace     string `yaml:"agonesNamespace"`
 	AgonesAllocatorHost string `yaml:"agonesAllocatorHost"`
-	AgonesAllocatorPort string `yaml:"agonesAllocatorPort"`
+	AgonesAllocatorPort uint   `yaml:"agonesAllocatorPort"`
 }
 
 func (c *config) Address() string {
