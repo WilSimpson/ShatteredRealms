@@ -6,6 +6,8 @@ import (
 	"unsafe"
 )
 
+// @TODO: Remove and replace usages with faker
+
 const (
 	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -14,11 +16,6 @@ const (
 )
 
 var src = rand.NewSource(time.Now().UnixNano())
-
-// ExamplePayload gives an easy interface to use for receiving
-type ExamplePayload struct {
-	Message string `json:"message"`
-}
 
 func RandString(n int) string {
 	b := make([]byte, n)
@@ -36,9 +33,4 @@ func RandString(n int) string {
 	}
 
 	return *(*string)(unsafe.Pointer(&b))
-}
-
-func RandInt(max uint) uint {
-	rand.Seed(time.Now().UnixNano())
-	return uint(rand.Int63n(int64(max)))
 }
