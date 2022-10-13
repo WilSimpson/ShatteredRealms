@@ -2,7 +2,6 @@ package srv
 
 import (
 	"context"
-	"fmt"
 	accountModel "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
@@ -73,7 +72,7 @@ func (s *authenticationServiceServer) Login(
 
 	token, err := s.tokenForUser(user)
 	if err != nil {
-		log.Error(fmt.Sprintf("error signing jwt: %v", err))
+		log.Errorf("error signing jwt: %v", err)
 		return nil, status.Error(codes.Internal, "Error signing validation token")
 	}
 

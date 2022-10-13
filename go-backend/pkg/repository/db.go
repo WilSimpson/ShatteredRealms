@@ -5,9 +5,11 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
+	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
+	"io/ioutil"
 	"time"
 )
 
@@ -83,4 +85,19 @@ func (c Connection) PostgresDSN() string {
 		c.Port,
 		c.Name,
 	)
+}
+
+func ConnectFromFile(filePath string) (*gorm.DB, error) {
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &DBConnections{}
+	err = yaml.Unmarshal(file, c)
+	if err != nil {
+		return nil, err
+	}
+
+	return DBConnect(*c)
 }

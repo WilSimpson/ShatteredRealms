@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
@@ -13,19 +12,19 @@ import (
 func main() {
 	jwtService, err := service.NewJWTService(conf.KeyDir)
 	if err != nil {
-		log.Error(fmt.Sprintf("jwt service: %v", err))
+		log.Errorf("jwt service: %v", err)
 		os.Exit(1)
 	}
 
 	grpcServer, gwmux, err := NewServer(jwtService)
 	if err != nil {
-		log.Error(fmt.Sprintf("grpc server: %v", err))
+		log.Errorf("grpc server: %v", err)
 		os.Exit(1)
 	}
 
 	lis, err := net.Listen("tcp", conf.Address())
 	if err != nil {
-		log.Error(fmt.Sprintf("listen: %v", err))
+		log.Errorf("listen: %v", err)
 		os.Exit(1)
 	}
 
@@ -39,7 +38,7 @@ func main() {
 	err = server.Serve(lis)
 
 	if err != nil {
-		log.Error(fmt.Sprintf("listen: %v", err))
+		log.Errorf("listen: %v", err)
 		os.Exit(1)
 	}
 }

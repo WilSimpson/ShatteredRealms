@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/cmd/updater/logging"
 	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
@@ -62,7 +63,7 @@ func GenerateMetadataFile(inputDir string, outputDir string, hashing bool) {
 	for len(queue) > 0 {
 		current, queue = queue[0], queue[1:]
 		files, err := ioutil.ReadDir(current.FullPath())
-		internal.HandleError(err)
+		logging.HandleError(err)
 		for _, file := range files {
 			if file.IsDir() {
 				newFS := &FolderStructure{
@@ -83,9 +84,9 @@ func GenerateMetadataFile(inputDir string, outputDir string, hashing bool) {
 
 				if hashing {
 					f, err = os.Open(current.FullPath() + "/" + file.Name())
-					internal.HandleError(err)
+					logging.HandleError(err)
 					if _, err := io.Copy(hasher, f); err != nil {
-						internal.HandleError(err)
+						logging.HandleError(err)
 					}
 					data.Hash = hex.EncodeToString(hasher.Sum(nil))
 				}
@@ -93,7 +94,7 @@ func GenerateMetadataFile(inputDir string, outputDir string, hashing bool) {
 				current.Files = append(current.Files, data)
 				if f != nil {
 					err := f.Close()
-					internal.HandleError(err)
+					logging.HandleError(err)
 				}
 			}
 		}
@@ -101,11 +102,11 @@ func GenerateMetadataFile(inputDir string, outputDir string, hashing bool) {
 	// Remove the root name because it should always be relative and therefore irrelevant
 	root.Name = ""
 	jsonBytes, err := json.Marshal(&root)
-	internal.HandleError(err)
+	logging.HandleError(err)
 	outFile, err := os.Create(outputDir + "/" + outFileName)
-	internal.HandleError(err)
+	logging.HandleError(err)
 	_, err = outFile.Write(jsonBytes)
-	internal.HandleError(err)
+	logging.HandleError(err)
 	fmt.Printf("Created file %s\n", outFile.Name())
 }
 

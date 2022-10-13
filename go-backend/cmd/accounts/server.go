@@ -21,10 +21,11 @@ func NewServer(
 ) (*grpc.Server, *runtime.ServeMux, error) {
 	ctx := context.Background()
 
-	publicRPCs := make(map[string]struct{})
-	publicRPCs["/sro.accounts.HealthService/Health"] = struct{}{}
-	publicRPCs["/sro.accounts.AuthenticationService/Login"] = struct{}{}
-	publicRPCs["/sro.accounts.AuthenticationService/Register"] = struct{}{}
+	publicRPCs := map[string]struct{}{
+		"/sro.accounts.HealthService/Health":           {},
+		"/sro.accounts.AuthenticationService/Login":    {},
+		"/sro.accounts.AuthenticationService/Register": {},
+	}
 
 	authorizationServiceServer := srv.NewAuthorizationServiceServer(u, p, r)
 	authInterceptor := interceptor.NewAuthInterceptor(jwt, publicRPCs, getPermissions(authorizationServiceServer))
@@ -45,7 +46,7 @@ func NewServer(
 	err := pb.RegisterAuthenticationServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Address(),
+		conf.Accounts.Address(),
 		opts,
 	)
 	if err != nil {
@@ -57,7 +58,7 @@ func NewServer(
 	err = pb.RegisterUserServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Address(),
+		conf.Accounts.Address(),
 		opts,
 	)
 	if err != nil {
@@ -69,7 +70,7 @@ func NewServer(
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Address(),
+		conf.Accounts.Address(),
 		opts,
 	)
 	if err != nil {
@@ -80,7 +81,7 @@ func NewServer(
 	err = pb.RegisterAuthorizationServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Address(),
+		conf.Accounts.Address(),
 		opts,
 	)
 	if err != nil {

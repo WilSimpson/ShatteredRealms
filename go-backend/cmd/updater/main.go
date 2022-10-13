@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/updater"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/cmd/updater/updater"
 )
 
 func main() {
-	err := internal.SetupConfig()
+	err := SetupConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
