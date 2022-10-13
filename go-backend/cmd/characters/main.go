@@ -1,73 +1,63 @@
 package main
 
 import (
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
+)
+
+type appConfig struct {
+	Characters config.Server `yaml:"characters"`
+	Accounts   config.Server `yaml:"accounts"`
+	KeyDir     string        `yaml:"keyDir"`
+	DBFile     string        `yaml:"dbFile"`
+}
+
+var (
+	conf = &appConfig{
+		Characters: config.Server{
+			Port:     8081,
+			Host:     "",
+			Mode:     "development",
+			LogLevel: log.InfoLevel,
+		},
+		Accounts: config.Server{
+			Port: 8080,
+			Host: "",
+		},
+		KeyDir: "/etc/sro/auth",
+		DBFile: "/etc/sro/db.yaml",
+	}
 )
 
 func main() {
-	file, err := ioutil.ReadFile(conf.DBFile)
-	if err != nil {
-		log.Errorf("reading db file: %v", err)
-		os.Exit(1)
-	}
-
-	c := &repository.DBConnections{}
-	err = yaml.Unmarshal(file, c)
-	if err != nil {
-		log.Errorf("parsing db file: %v", err)
-		os.Exit(1)
-	}
-
-	db, err := repository.DBConnect(*c)
-	if err != nil {
-		log.Errorf("db: %v", err)
-		os.Exit(1)
-	}
-
-	jwtService, err := service.NewJWTService(conf.KeyDir)
-	if err != nil {
-		log.Errorf("jwt service: %v", err)
-		os.Exit(1)
-	}
+	db, err := repository.ConnectFromFile(conf.DBFile)
+	helpers.Check(err, "db connect from file")
 
 	characterRepo := repository.NewCharacterRepository(db)
-	if err := characterRepo.Migrate(); err != nil {
-		log.Errorf("character repo: %v", err)
-		os.Exit(1)
-	}
+	helpers.Check(characterRepo.Migrate(), "character repo")
+
 	characterService := service.NewCharacterService(characterRepo)
+	jwtService, err := service.NewJWTService(conf.KeyDir)
+	helpers.Check(err, "jwt service")
 
 	grpcServer, gwmux, err := NewServer(characterService, jwtService)
-	if err != nil {
-		log.Errorf("grpc server: %v", err)
-		os.Exit(1)
-	}
+	helpers.Check(err, "create grpc server")
 
-	lis, err := net.Listen("tcp", conf.Address())
-	if err != nil {
-		log.Errorf("listen: %v", err)
-		os.Exit(1)
-	}
+	lis, err := net.Listen("tcp", conf.Characters.Address())
+	helpers.Check(err, "listen")
 
 	server := &http.Server{
-		Addr:    conf.Address(),
+		Addr:    conf.Characters.Address(),
 		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
 	}
 
 	log.Info("Server starting")
 
 	err = server.Serve(lis)
-
-	if err != nil {
-		log.Errorf("listen: %v", err)
-		os.Exit(1)
-	}
+	helpers.Check(err, "serve")
 }
