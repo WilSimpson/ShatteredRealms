@@ -11,7 +11,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func NewServer(
@@ -39,9 +38,7 @@ func NewServer(
 	)
 
 	gwmux := runtime.NewServeMux()
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
+	opts := srv.InsecureOtelGrpcDialOpts()
 
 	authenticationServiceServer := srv.NewAuthenticationServiceServer(u, jwt, p)
 	pb.RegisterAuthenticationServiceServer(grpcServer, authenticationServiceServer)

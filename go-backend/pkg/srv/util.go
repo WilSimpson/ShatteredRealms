@@ -217,17 +217,17 @@ func serverAuthContext(jwtService service.JWTService, authorizer string) context
 }
 
 func DialOtelGrpc(address string) (*grpc.ClientConn, error) {
-	return grpc.Dial(address, insecureOtelGrpcDialOpts()...)
+	return grpc.Dial(address, InsecureOtelGrpcDialOpts()...)
 }
 
-func otelGrpcDialOpts() []grpc.DialOption {
+func OtelGrpcDialOpts() []grpc.DialOption {
 	return []grpc.DialOption{
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 	}
 }
 
-func insecureOtelGrpcDialOpts() []grpc.DialOption {
+func InsecureOtelGrpcDialOpts() []grpc.DialOption {
 	return []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
@@ -242,7 +242,7 @@ func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, pu
 
 	conn, err := grpc.Dial(
 		accountsAddress,
-		insecureOtelGrpcDialOpts()...,
+		InsecureOtelGrpcDialOpts()...,
 	)
 	if err != nil {
 		return nil, nil, nil, err
@@ -262,6 +262,6 @@ func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, pu
 			grpc.ChainStreamInterceptor(authInterceptor.Stream(), helpers.StreamLogRequest()),
 		),
 		runtime.NewServeMux(),
-		insecureOtelGrpcDialOpts(),
+		InsecureOtelGrpcDialOpts(),
 		nil
 }

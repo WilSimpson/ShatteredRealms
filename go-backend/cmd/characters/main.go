@@ -1,20 +1,23 @@
 package main
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
+	"github.com/uptrace/uptrace-go/uptrace"
 	"net"
 	"net/http"
 )
 
 type appConfig struct {
-	Characters config.Server `yaml:"characters"`
-	Accounts   config.Server `yaml:"accounts"`
-	KeyDir     string        `yaml:"keyDir"`
-	DBFile     string        `yaml:"dbFile"`
+	Characters config.Server        `yaml:"characters"`
+	Accounts   config.Server        `yaml:"accounts"`
+	KeyDir     string               `yaml:"keyDir"`
+	DBFile     string               `yaml:"dbFile"`
+	Uptrace    config.UptraceConfig `yaml:"uptrace"`
 }
 
 var (
@@ -40,6 +43,14 @@ func init() {
 }
 
 func main() {
+	ctx := context.Background()
+	uptrace.ConfigureOpentelemetry(
+		uptrace.WithDSN(conf.Uptrace.DSN()),
+		uptrace.WithServiceName("accounts_service"),
+		uptrace.WithServiceName("v1.0.0"),
+	)
+	defer uptrace.Shutdown(ctx)
+
 	db, err := repository.ConnectFromFile(conf.DBFile)
 	helpers.Check(err, "db connect from file")
 
