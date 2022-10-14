@@ -1,26 +1,27 @@
 package service
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"gorm.io/gorm"
 )
 
 type PermissionService interface {
-	AddPermissionForUser(permission *model.UserPermission) error
-	AddPermissionForRole(permission *model.RolePermission) error
+	AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-	RemPermissionForUser(permission *model.UserPermission) error
-	RemPermissionForRole(permission *model.RolePermission) error
+	RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-	FindPermissionsForUserID(id uint) []*model.UserPermission
-	FindPermissionsForRoleID(id uint) []*model.RolePermission
+	FindPermissionsForUserID(ctx context.Context, id uint) []*model.UserPermission
+	FindPermissionsForRoleID(ctx context.Context, id uint) []*model.RolePermission
 
-	ClearPermissionsForRole(id uint) error
-	ClearPermissionsForUser(id uint) error
+	ClearPermissionsForRole(ctx context.Context, id uint) error
+	ClearPermissionsForUser(ctx context.Context, id uint) error
 
-	ResetPermissionsForRole(id uint, permissions []*model.RolePermission) error
-	ResetPermissionsForUser(id uint, permissions []*model.UserPermission) error
+	ResetPermissionsForRole(ctx context.Context, id uint, permissions []*model.RolePermission) error
+	ResetPermissionsForUser(ctx context.Context, id uint, permissions []*model.UserPermission) error
 
 	WithTrx(*gorm.DB) PermissionService
 	Migrate() error
@@ -36,20 +37,20 @@ func NewPermissionService(r repository.PermissionRepository) PermissionService {
 	}
 }
 
-func (s permissionService) AddPermissionForUser(permission *model.UserPermission) error {
-	return s.permissionRepository.AddPermissionForUser(permission)
+func (s permissionService) AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
+	return s.permissionRepository.AddPermissionForUser(ctx, permission)
 }
 
-func (s permissionService) AddPermissionForRole(permission *model.RolePermission) error {
-	return s.permissionRepository.AddPermissionForRole(permission)
+func (s permissionService) AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
+	return s.permissionRepository.AddPermissionForRole(ctx, permission)
 }
 
-func (s permissionService) RemPermissionForUser(permission *model.UserPermission) error {
-	return s.permissionRepository.RemPermissionForUser(permission)
+func (s permissionService) RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
+	return s.permissionRepository.RemPermissionForUser(ctx, permission)
 }
 
-func (s permissionService) RemPermissionForRole(permission *model.RolePermission) error {
-	return s.permissionRepository.RemPermissionForRole(permission)
+func (s permissionService) RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
+	return s.permissionRepository.RemPermissionForRole(ctx, permission)
 }
 
 func (s permissionService) WithTrx(db *gorm.DB) PermissionService {
@@ -57,31 +58,31 @@ func (s permissionService) WithTrx(db *gorm.DB) PermissionService {
 	return s
 }
 
-func (s permissionService) FindPermissionsForUserID(id uint) []*model.UserPermission {
-	return s.permissionRepository.FindPermissionsForUserID(id)
+func (s permissionService) FindPermissionsForUserID(ctx context.Context, id uint) []*model.UserPermission {
+	return s.permissionRepository.FindPermissionsForUserID(ctx, id)
 }
 
-func (s permissionService) FindPermissionsForRoleID(id uint) []*model.RolePermission {
-	return s.permissionRepository.FindPermissionsForRoleID(id)
+func (s permissionService) FindPermissionsForRoleID(ctx context.Context, id uint) []*model.RolePermission {
+	return s.permissionRepository.FindPermissionsForRoleID(ctx, id)
 }
 
-func (s permissionService) ClearPermissionsForRole(id uint) error {
-	return s.permissionRepository.ClearPermissionsForRole(id)
+func (s permissionService) ClearPermissionsForRole(ctx context.Context, id uint) error {
+	return s.permissionRepository.ClearPermissionsForRole(ctx, id)
 }
 
-func (s permissionService) ClearPermissionsForUser(id uint) error {
-	return s.permissionRepository.ClearPermissionsForUser(id)
+func (s permissionService) ClearPermissionsForUser(ctx context.Context, id uint) error {
+	return s.permissionRepository.ClearPermissionsForUser(ctx, id)
 }
 
-func (s permissionService) ResetPermissionsForRole(id uint, permissions []*model.RolePermission) error {
-	err := s.ClearPermissionsForRole(id)
+func (s permissionService) ResetPermissionsForRole(ctx context.Context, id uint, permissions []*model.RolePermission) error {
+	err := s.ClearPermissionsForRole(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	for _, permission := range permissions {
 		if permission.RoleID == id {
-			err = s.AddPermissionForRole(permission)
+			err = s.AddPermissionForRole(ctx, permission)
 			if err != nil {
 				return err
 			}
@@ -91,15 +92,15 @@ func (s permissionService) ResetPermissionsForRole(id uint, permissions []*model
 	return nil
 }
 
-func (s permissionService) ResetPermissionsForUser(id uint, permissions []*model.UserPermission) error {
-	err := s.ClearPermissionsForUser(id)
+func (s permissionService) ResetPermissionsForUser(ctx context.Context, id uint, permissions []*model.UserPermission) error {
+	err := s.ClearPermissionsForUser(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	for _, permission := range permissions {
 		if permission.UserID == 0 || permission.UserID == id {
-			err = s.AddPermissionForUser(permission)
+			err = s.AddPermissionForUser(ctx, permission)
 			if err != nil {
 				return err
 			}

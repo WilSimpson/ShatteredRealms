@@ -42,7 +42,7 @@ func (s *characterServiceServer) GetAllRealms(context.Context, *emptypb.Empty) (
 }
 
 func (s *characterServiceServer) GetAllCharacters(ctx context.Context, message *emptypb.Empty) (*pb.Characters, error) {
-	characters, err := s.characterService.FindAll()
+	characters, err := s.characterService.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *characterServiceServer) GetAllCharactersForUser(ctx context.Context, me
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	characters, err := s.characterService.FindAllByOwner(message.UserId)
+	characters, err := s.characterService.FindAllByOwner(ctx, message.UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *characterServiceServer) GetAllCharactersForUser(ctx context.Context, me
 }
 
 func (s *characterServiceServer) GetCharacter(ctx context.Context, message *pb.CharacterTarget) (*pb.Character, error) {
-	character, err := s.characterService.FindById(message.CharacterId)
+	character, err := s.characterService.FindById(ctx, message.CharacterId)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *characterServiceServer) CreateCharacter(ctx context.Context, message *p
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	character, err := s.characterService.Create(message.UserId, message.Name.Value, message.Gender, message.Realm)
+	character, err := s.characterService.Create(ctx, message.UserId, message.Name.Value, message.Gender, message.Realm)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (s *characterServiceServer) CreateCharacter(ctx context.Context, message *p
 }
 
 func (s *characterServiceServer) DeleteCharacter(ctx context.Context, message *pb.Character) (*emptypb.Empty, error) {
-	character, err := s.characterService.FindById(message.Id)
+	character, err := s.characterService.FindById(ctx, message.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +102,11 @@ func (s *characterServiceServer) DeleteCharacter(ctx context.Context, message *p
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	return &emptypb.Empty{}, s.characterService.Delete(message.Id)
+	return &emptypb.Empty{}, s.characterService.Delete(ctx, message.Id)
 }
 
 func (s *characterServiceServer) EditCharacter(ctx context.Context, message *pb.Character) (*pb.Character, error) {
-	character, err := s.characterService.FindById(message.Id)
+	character, err := s.characterService.FindById(ctx, message.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (s *characterServiceServer) EditCharacter(ctx context.Context, message *pb.
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	character, err = s.characterService.Edit(message)
+	character, err = s.characterService.Edit(ctx, message)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *characterServiceServer) EditCharacter(ctx context.Context, message *pb.
 }
 
 func (s *characterServiceServer) AddCharacterPlayTime(ctx context.Context, message *pb.PlayTimeMessage) (*pb.PlayTimeMessage, error) {
-	character, err := s.characterService.FindById(message.CharacterId)
+	character, err := s.characterService.FindById(ctx, message.CharacterId)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (s *characterServiceServer) AddCharacterPlayTime(ctx context.Context, messa
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	newTime, err := s.characterService.AddPlayTime(message.CharacterId, message.Time)
+	newTime, err := s.characterService.AddPlayTime(ctx, message.CharacterId, message.Time)
 	if err != nil {
 		return nil, err
 	}

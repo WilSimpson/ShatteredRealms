@@ -72,7 +72,7 @@ func (s *userServiceServer) Get(
 		FirstName:          user.FirstName,
 		LastName:           user.LastName,
 		Roles:              ConvertRolesNamesOnly(user.Roles),
-		Permissions:        ConvertUserPermissions(s.permissionService.FindPermissionsForUserID(user.ID)),
+		Permissions:        ConvertUserPermissions(s.permissionService.FindPermissionsForUserID(ctx, user.ID)),
 		CreatedAt:          user.CreatedAt.String(),
 		BannedAt:           user.BannedAtString(),
 		CurrentCharacterId: uint64(user.CurrentCharacterId),

@@ -14,11 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
-	"time"
-)
-
-const (
-	retryAfter = time.Second * 10
 )
 
 func NewServer(
@@ -29,6 +24,7 @@ func NewServer(
 	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
 		jwt,
 		conf.Accounts.Address(),
+		"gamebackend",
 		map[string]struct{}{
 			"/sro.gamebackend.ConnectionService/Connect": {},
 		},

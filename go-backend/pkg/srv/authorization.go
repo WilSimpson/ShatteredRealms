@@ -59,10 +59,10 @@ func (s *AuthorizationServiceServer) GetAuthorization(
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
-	permissions := ConvertUserPermissions(s.PermissionService.FindPermissionsForUserID(user.ID))
+	permissions := ConvertUserPermissions(s.PermissionService.FindPermissionsForUserID(ctx, user.ID))
 	roles := ConvertRolesWithoutPermissions(user.Roles)
 	for i, role := range roles {
-		roles[i].Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(uint(role.Id)))
+		roles[i].Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(ctx, uint(role.Id)))
 	}
 
 	resp := &pb.AuthorizationMessage{
@@ -81,11 +81,14 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 	}
 
 	for _, v := range message.Permissions {
-		err := s.PermissionService.AddPermissionForUser(&model.UserPermission{
-			UserID:     user.ID,
-			Permission: v.Permission.Value,
-			Other:      v.Other,
-		})
+		err := s.PermissionService.AddPermissionForUser(
+			ctx,
+			&model.UserPermission{
+				UserID:     user.ID,
+				Permission: v.Permission.Value,
+				Other:      v.Other,
+			},
+		)
 
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -119,11 +122,14 @@ func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, me
 	}
 
 	for _, v := range message.Permissions {
-		err := s.PermissionService.RemPermissionForUser(&model.UserPermission{
-			UserID:     user.ID,
-			Permission: v.Permission.Value,
-			Other:      v.Other,
-		})
+		err := s.PermissionService.RemPermissionForUser(
+			ctx,
+			&model.UserPermission{
+				UserID:     user.ID,
+				Permission: v.Permission.Value,
+				Other:      v.Other,
+			},
+		)
 
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -151,26 +157,28 @@ func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, me
 
 func (s *AuthorizationServiceServer) GetRoles(ctx context.Context, message *emptypb.Empty) (*pb.UserRoles, error) {
 	resp := &pb.UserRoles{
-		Roles: ConvertRolesNamesOnly(s.roleService.FindAll()),
+		Roles: ConvertRolesNamesOnly(s.roleService.FindAll(ctx)),
 	}
 	for i, v := range resp.Roles {
-		resp.Roles[i].Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(uint(v.Id)))
+		resp.Roles[i].Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(ctx, uint(v.Id)))
 	}
 
 	return resp, nil
 }
 
 func (s *AuthorizationServiceServer) GetRole(ctx context.Context, message *pb.IDMessage) (*pb.UserRole, error) {
-	resp := ConvertRoleNameOnly(s.roleService.FindById(uint(message.Id)))
-	resp.Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(uint(message.Id)))
+	resp := ConvertRoleNameOnly(s.roleService.FindById(ctx, uint(message.Id)))
+	resp.Permissions = ConvertRolePermissions(s.PermissionService.FindPermissionsForRoleID(ctx, uint(message.Id)))
 
 	return resp, nil
 }
 
 func (s *AuthorizationServiceServer) CreateRole(ctx context.Context, message *pb.UserRole) (*emptypb.Empty, error) {
-	_, err := s.roleService.Create(&model.Role{
-		Name: message.Name.Value,
-	})
+	_, err := s.roleService.Create(
+		ctx,
+		&model.Role{
+			Name: message.Name.Value,
+		})
 
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -181,12 +189,14 @@ func (s *AuthorizationServiceServer) CreateRole(ctx context.Context, message *pb
 
 func (s *AuthorizationServiceServer) EditRole(ctx context.Context, message *pb.UserRole) (*emptypb.Empty, error) {
 	if message.Name != nil {
-		err := s.roleService.Update(&model.Role{
-			Model: gorm.Model{
-				ID: uint(message.Id),
-			},
-			Name: message.Name.Value,
-		})
+		err := s.roleService.Update(
+			ctx,
+			&model.Role{
+				Model: gorm.Model{
+					ID: uint(message.Id),
+				},
+				Name: message.Name.Value,
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +211,7 @@ func (s *AuthorizationServiceServer) EditRole(ctx context.Context, message *pb.U
 			}
 		}
 
-		err := s.PermissionService.ResetPermissionsForRole(uint(message.Id), newPermissions)
+		err := s.PermissionService.ResetPermissionsForRole(ctx, uint(message.Id), newPermissions)
 		if err != nil {
 			return nil, err
 		}
@@ -213,11 +223,14 @@ func (s *AuthorizationServiceServer) EditRole(ctx context.Context, message *pb.U
 }
 
 func (s *AuthorizationServiceServer) DeleteRole(ctx context.Context, message *pb.UserRole) (*emptypb.Empty, error) {
-	err := s.roleService.Delete(&model.Role{
-		Model: gorm.Model{
-			ID: uint(message.Id),
+	err := s.roleService.Delete(
+		ctx,
+		&model.Role{
+			Model: gorm.Model{
+				ID: uint(message.Id),
+			},
 		},
-	})
+	)
 
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())

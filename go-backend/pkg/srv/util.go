@@ -235,10 +235,12 @@ func InsecureOtelGrpcDialOpts() []grpc.DialOption {
 	}
 }
 
-func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, publicRPCs map[string]struct{}) (*grpc.Server, *runtime.ServeMux, []grpc.DialOption, error) {
+func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, serviceName string, publicRPCs map[string]struct{}) (*grpc.Server, *runtime.ServeMux, []grpc.DialOption, error) {
 	if publicRPCs == nil {
 		publicRPCs = make(map[string]struct{})
 	}
+
+	authName := fmt.Sprintf("sro.com/%s/v1", serviceName)
 
 	conn, err := grpc.Dial(
 		accountsAddress,
@@ -251,17 +253,19 @@ func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, pu
 	authInterceptor := interceptor.NewAuthInterceptor(
 		jwt,
 		publicRPCs,
-		GetPermissions(pb.NewAuthorizationServiceClient(conn), jwt, "sro.com/characters/v1"),
+		GetPermissions(pb.NewAuthorizationServiceClient(conn), jwt, authName),
 	)
 
-	go ProcessRoleUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, "sro.com/characters/v1")
-	go ProcessUserUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, "sro.com/characters/v1")
+	go ProcessRoleUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
+	go ProcessUserUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
 
 	return grpc.NewServer(
 			grpc.ChainUnaryInterceptor(authInterceptor.Unary(), helpers.UnaryLogRequest()),
 			grpc.ChainStreamInterceptor(authInterceptor.Stream(), helpers.StreamLogRequest()),
+			grpc.ChainUnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+			grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
 		),
 		runtime.NewServeMux(),
-		InsecureOtelGrpcDialOpts(),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 		nil
 }

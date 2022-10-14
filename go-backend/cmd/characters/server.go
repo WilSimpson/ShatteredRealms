@@ -15,14 +15,19 @@ func NewServer(
 ) (*grpc.Server, *runtime.ServeMux, error) {
 	ctx := context.Background()
 
-	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(jwt, conf.Accounts.Address(), nil)
+	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
+		jwt,
+		conf.Accounts.Address(),
+		"characters",
+		nil,
+	)
 
 	characterServiceServer := srv.NewCharacterServiceServer(characterService, jwt)
 	pb.RegisterCharactersServiceServer(grpcServer, characterServiceServer)
 	err = pb.RegisterCharactersServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Accounts.Address(),
+		conf.Characters.Address(),
 		opts,
 	)
 	if err != nil {

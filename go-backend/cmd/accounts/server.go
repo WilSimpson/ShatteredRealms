@@ -11,6 +11,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func NewServer(
@@ -38,7 +39,7 @@ func NewServer(
 	)
 
 	gwmux := runtime.NewServeMux()
-	opts := srv.InsecureOtelGrpcDialOpts()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	authenticationServiceServer := srv.NewAuthenticationServiceServer(u, jwt, p)
 	pb.RegisterAuthenticationServiceServer(grpcServer, authenticationServiceServer)
@@ -116,12 +117,12 @@ func getPermissions(
 		resp := make(map[string]bool)
 
 		for _, role := range user.Roles {
-			for _, rolePermission := range server.PermissionService.FindPermissionsForRoleID(role.ID) {
+			for _, rolePermission := range server.PermissionService.FindPermissionsForRoleID(ctx, role.ID) {
 				resp[rolePermission.Permission] = resp[rolePermission.Permission] || rolePermission.Other
 			}
 		}
 
-		for _, userPermission := range server.PermissionService.FindPermissionsForUserID(userID) {
+		for _, userPermission := range server.PermissionService.FindPermissionsForUserID(ctx, userID) {
 			resp[userPermission.Permission] = resp[userPermission.Permission] || userPermission.Other
 		}
 

@@ -1,24 +1,25 @@
 package service
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"gorm.io/gorm"
 )
 
 type RoleService interface {
-	Create(*model.Role) (*model.Role, error)
-	Save(*model.Role) (*model.Role, error)
-	Delete(*model.Role) error
-	Update(*model.Role) error
+	Create(context.Context, *model.Role) (*model.Role, error)
+	Save(context.Context, *model.Role) (*model.Role, error)
+	Delete(context.Context, *model.Role) error
+	Update(context.Context, *model.Role) error
 
-	All() []*model.Role
-	FindById(id uint) *model.Role
-	FindByName(name string) *model.Role
+	All(context.Context) []*model.Role
+	FindById(ctx context.Context, id uint) *model.Role
+	FindByName(ctx context.Context, name string) *model.Role
 
 	WithTrx(*gorm.DB) RoleService
 
-	FindAll() []*model.Role
+	FindAll(ctx context.Context) []*model.Role
 }
 
 type roleService struct {
@@ -31,36 +32,36 @@ func NewRoleService(r repository.RoleRepository) RoleService {
 	}
 }
 
-func (s roleService) Create(role *model.Role) (*model.Role, error) {
-	return s.roleRepository.Create(role)
+func (s roleService) Create(ctx context.Context, role *model.Role) (*model.Role, error) {
+	return s.roleRepository.Create(ctx, role)
 }
 
-func (s roleService) Save(role *model.Role) (*model.Role, error) {
-	return s.roleRepository.Save(role)
+func (s roleService) Save(ctx context.Context, role *model.Role) (*model.Role, error) {
+	return s.roleRepository.Save(ctx, role)
 }
 
-func (s roleService) Delete(role *model.Role) error {
-	return s.roleRepository.Delete(role)
+func (s roleService) Delete(ctx context.Context, role *model.Role) error {
+	return s.roleRepository.Delete(ctx, role)
 }
 
-func (s roleService) Update(role *model.Role) error {
+func (s roleService) Update(ctx context.Context, role *model.Role) error {
 	if len(role.Name) == 0 {
 		return nil
 	}
 
-	return s.roleRepository.Update(role)
+	return s.roleRepository.Update(ctx, role)
 }
 
-func (s roleService) All() []*model.Role {
-	return s.roleRepository.All()
+func (s roleService) All(ctx context.Context) []*model.Role {
+	return s.roleRepository.All(ctx)
 }
 
-func (s roleService) FindById(id uint) *model.Role {
-	return s.roleRepository.FindById(id)
+func (s roleService) FindById(ctx context.Context, id uint) *model.Role {
+	return s.roleRepository.FindById(ctx, id)
 }
 
-func (s roleService) FindByName(name string) *model.Role {
-	return s.roleRepository.FindByName(name)
+func (s roleService) FindByName(ctx context.Context, name string) *model.Role {
+	return s.roleRepository.FindByName(ctx, name)
 }
 
 func (s roleService) WithTrx(db *gorm.DB) RoleService {
@@ -68,6 +69,6 @@ func (s roleService) WithTrx(db *gorm.DB) RoleService {
 	return s
 }
 
-func (s roleService) FindAll() []*model.Role {
-	return s.roleRepository.All()
+func (s roleService) FindAll(ctx context.Context) []*model.Role {
+	return s.roleRepository.All(ctx)
 }

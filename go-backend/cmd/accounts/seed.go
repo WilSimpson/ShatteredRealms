@@ -17,12 +17,15 @@ func seedDatabaseIfNeeded(
 	servicesInfo map[string]grpc.ServiceInfo,
 ) {
 	var err error
-	superAdminRole := roleService.FindByName("Super Admin")
+	superAdminRole := roleService.FindByName(ctx, "Super Admin")
 	if superAdminRole.Model.ID == 0 {
 		// Create Super Admin role
-		superAdminRole, err = roleService.Create(&model.Role{
-			Name: "Super Admin",
-		})
+		superAdminRole, err = roleService.Create(
+			ctx,
+			&model.Role{
+				Name: "Super Admin",
+			},
+		)
 		if err != nil {
 			log.Errorf("creating super admin: %v", err)
 			return
@@ -30,7 +33,7 @@ func seedDatabaseIfNeeded(
 	}
 
 	currentPermissions := createSetOfPermissions(
-		permissionService.FindPermissionsForRoleID(superAdminRole.ID),
+		permissionService.FindPermissionsForRoleID(ctx, superAdminRole.ID),
 	)
 
 	// Assign all permissions with Other set to true
@@ -39,7 +42,7 @@ func seedDatabaseIfNeeded(
 			permission := fmt.Sprintf("/%s/%s", packageService, methodInfo.Name)
 			// Only add the permission if it doesn't exist already
 			if _, ok := currentPermissions[permission]; !ok {
-				err = permissionService.AddPermissionForRole(&model.RolePermission{
+				err = permissionService.AddPermissionForRole(ctx, &model.RolePermission{
 					RoleID:     superAdminRole.ID,
 					Permission: permission,
 					Other:      true,

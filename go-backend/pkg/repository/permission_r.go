@@ -1,22 +1,23 @@
 package repository
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"gorm.io/gorm"
 )
 
 type PermissionRepository interface {
-	AddPermissionForUser(permission *model.UserPermission) error
-	AddPermissionForRole(permission *model.RolePermission) error
+	AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-	RemPermissionForUser(permission *model.UserPermission) error
-	RemPermissionForRole(permission *model.RolePermission) error
+	RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-	FindPermissionsForUserID(id uint) []*model.UserPermission
-	FindPermissionsForRoleID(id uint) []*model.RolePermission
+	FindPermissionsForUserID(ctx context.Context, id uint) []*model.UserPermission
+	FindPermissionsForRoleID(ctx context.Context, id uint) []*model.RolePermission
 
-	ClearPermissionsForRole(id uint) error
-	ClearPermissionsForUser(id uint) error
+	ClearPermissionsForRole(ctx context.Context, id uint) error
+	ClearPermissionsForUser(ctx context.Context, id uint) error
 
 	WithTrx(*gorm.DB) PermissionRepository
 	Migrate() error
@@ -32,40 +33,40 @@ func NewPermissionRepository(db *gorm.DB) PermissionRepository {
 	}
 }
 
-func (r permissionRepository) AddPermissionForUser(permission *model.UserPermission) error {
-	return r.DB.Create(&permission).Error
+func (r permissionRepository) AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
+	return r.DB.WithContext(ctx).Create(&permission).Error
 }
 
-func (r permissionRepository) AddPermissionForRole(permission *model.RolePermission) error {
-	return r.DB.Create(&permission).Error
+func (r permissionRepository) AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
+	return r.DB.WithContext(ctx).Create(&permission).Error
 }
 
-func (r permissionRepository) RemPermissionForUser(permission *model.UserPermission) error {
-	return r.DB.Delete(&permission).Error
+func (r permissionRepository) RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
+	return r.DB.WithContext(ctx).Delete(&permission).Error
 }
 
-func (r permissionRepository) RemPermissionForRole(permission *model.RolePermission) error {
-	return r.DB.Delete(&permission).Error
+func (r permissionRepository) RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
+	return r.DB.WithContext(ctx).Delete(&permission).Error
 }
 
-func (r permissionRepository) FindPermissionsForUserID(id uint) []*model.UserPermission {
+func (r permissionRepository) FindPermissionsForUserID(ctx context.Context, id uint) []*model.UserPermission {
 	var permissions []*model.UserPermission
-	r.DB.Where("user_id = ?", id).Find(&permissions)
+	r.DB.WithContext(ctx).Where("user_id = ?", id).Find(&permissions)
 	return permissions
 }
 
-func (r permissionRepository) FindPermissionsForRoleID(id uint) []*model.RolePermission {
+func (r permissionRepository) FindPermissionsForRoleID(ctx context.Context, id uint) []*model.RolePermission {
 	var permissions []*model.RolePermission
-	r.DB.Where("role_id = ?", id).Find(&permissions)
+	r.DB.WithContext(ctx).Where("role_id = ?", id).Find(&permissions)
 	return permissions
 }
 
-func (r permissionRepository) ClearPermissionsForRole(id uint) error {
-	return r.DB.Delete(&model.RolePermission{}, "role_id = ?", id).Error
+func (r permissionRepository) ClearPermissionsForRole(ctx context.Context, id uint) error {
+	return r.DB.WithContext(ctx).Delete(&model.RolePermission{}, "role_id = ?", id).Error
 }
 
-func (r permissionRepository) ClearPermissionsForUser(id uint) error {
-	return r.DB.Delete(&model.UserPermission{}, "user_id = ?", id).Error
+func (r permissionRepository) ClearPermissionsForUser(ctx context.Context, id uint) error {
+	return r.DB.WithContext(ctx).Delete(&model.UserPermission{}, "user_id = ?", id).Error
 }
 
 func (r permissionRepository) WithTrx(trx *gorm.DB) PermissionRepository {

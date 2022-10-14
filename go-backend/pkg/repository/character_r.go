@@ -1,18 +1,19 @@
 package repository
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"gorm.io/gorm"
 )
 
 type CharacterRepository interface {
-	Create(character *model.Character) (*model.Character, error)
-	Save(character *model.Character) (*model.Character, error)
-	Delete(character *model.Character) error
-	FindById(id uint64) (*model.Character, error)
-	FindAll() ([]*model.Character, error)
+	Create(ctx context.Context, character *model.Character) (*model.Character, error)
+	Save(ctx context.Context, character *model.Character) (*model.Character, error)
+	Delete(ctx context.Context, character *model.Character) error
+	FindById(ctx context.Context, id uint64) (*model.Character, error)
+	FindAll(context.Context) ([]*model.Character, error)
 
-	FindAllByOwner(id uint64) ([]*model.Character, error)
+	FindAllByOwner(ctx context.Context, id uint64) ([]*model.Character, error)
 
 	WithTrx(trx *gorm.DB) CharacterRepository
 	Migrate() error
@@ -28,11 +29,11 @@ func NewCharacterRepository(db *gorm.DB) CharacterRepository {
 	}
 }
 
-func (r characterRepository) Create(character *model.Character) (*model.Character, error) {
+func (r characterRepository) Create(ctx context.Context, character *model.Character) (*model.Character, error) {
 	// Set the ID to zero so the database can generate the value
 	character.ID = 0
 
-	err := r.DB.Create(&character).Error
+	err := r.DB.WithContext(ctx).Create(&character).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (r characterRepository) Create(character *model.Character) (*model.Characte
 	return character, nil
 }
 
-func (r characterRepository) Save(character *model.Character) (*model.Character, error) {
-	err := r.DB.Save(&character).Error
+func (r characterRepository) Save(ctx context.Context, character *model.Character) (*model.Character, error) {
+	err := r.DB.WithContext(ctx).Save(&character).Error
 	if err != nil {
 		return nil, err
 	}
@@ -49,13 +50,13 @@ func (r characterRepository) Save(character *model.Character) (*model.Character,
 	return character, nil
 }
 
-func (r characterRepository) Delete(character *model.Character) error {
-	return r.DB.Delete(&character).Error
+func (r characterRepository) Delete(ctx context.Context, character *model.Character) error {
+	return r.DB.WithContext(ctx).Delete(&character).Error
 }
 
-func (r characterRepository) FindById(id uint64) (*model.Character, error) {
+func (r characterRepository) FindById(ctx context.Context, id uint64) (*model.Character, error) {
 	var character *model.Character = nil
-	err := r.DB.First(&character, id).Error
+	err := r.DB.WithContext(ctx).First(&character, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -63,14 +64,14 @@ func (r characterRepository) FindById(id uint64) (*model.Character, error) {
 	return character, nil
 }
 
-func (r characterRepository) FindAll() ([]*model.Character, error) {
+func (r characterRepository) FindAll(ctx context.Context) ([]*model.Character, error) {
 	var characters []*model.Character
-	return characters, r.DB.Find(&characters).Error
+	return characters, r.DB.WithContext(ctx).Find(&characters).Error
 }
 
-func (r characterRepository) FindAllByOwner(id uint64) ([]*model.Character, error) {
+func (r characterRepository) FindAllByOwner(ctx context.Context, id uint64) ([]*model.Character, error) {
 	var characters []*model.Character
-	return characters, r.DB.Where("owner_id = ?", id).Find(&characters).Error
+	return characters, r.DB.WithContext(ctx).Where("owner_id = ?", id).Find(&characters).Error
 }
 
 func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {
