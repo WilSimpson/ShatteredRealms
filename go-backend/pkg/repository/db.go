@@ -5,6 +5,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -30,8 +31,6 @@ type DBConnections struct {
 
 // DBConnect Initializes the connection to a Postgres database
 func DBConnect(connections DBConnections) (*gorm.DB, error) {
-	fmt.Println("Connecting to database...")
-
 	config, err := pgx.ParseConfig(connections.Master.PostgresDSN())
 	if err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
@@ -60,6 +59,10 @@ func DBConnect(connections DBConnections) (*gorm.DB, error) {
 			Replicas: replicas,
 			Policy:   dbresolver.RandomPolicy{},
 		}))
+	}
+
+	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(connections.Master.Name))); err != nil {
+		return nil, err
 	}
 
 	return db, err

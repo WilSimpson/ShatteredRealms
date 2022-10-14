@@ -31,19 +31,7 @@ ifneq (,$(findstring v,$(BASE_VERSION)))
 endif
 
 # Gets the directory containing the Makefile
-BUILD_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-
-# Root code directory
-ROOT_DIR = $(realpath $(BUILD_DIR)/..)
-
-# Directory containing applications
-BASE_APP_DIR = $(realpath $(ROOT_DIR)/cmd)
-
-# Binary output directory
-BIN_DIR = $(realpath $(ROOT_DIR)/bin)
-
-# Entrypoint for applications
-APP_MAIN = $(BASE_APP_DIR)/accounts/main.go
+ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Base container registry
 SRO_BASE_REGISTRY ?= 779965382548.dkr.ecr.us-east-1.amazonaws.com
@@ -58,7 +46,6 @@ PROTO_THIRD_PARTY_DIR=$(ROOT_DIR)/third_party
 
 PROTO_FILES = $(notdir $(shell find $(PROTO_DIR) -name '*.proto'))
 
-
 #   _____                    _
 #  |_   _|                  | |
 #    | | __ _ _ __ __ _  ___| |_ ___
@@ -68,9 +55,6 @@ PROTO_FILES = $(notdir $(shell find $(PROTO_DIR) -name '*.proto'))
 #                  __/ |
 #                 |___/
 
-build:
-	go build -o $(BIN_DIR)/accounts $(APP_MAIN)
-
 test:
 	ginkgo $(ROOT_DIR)/... -covermode atomic
 
@@ -78,33 +62,48 @@ report: test
 	go tool cover -func=$(ROOT_DIR)/coverage.out
 	go tool cover -html=$(ROOT_DIR)/coverage.out
 
-run-local:
-	SRO_DB_FILE=$(ROOT_DIR)/test/db.yaml SRO_KEY_DIR=$(ROOT_DIR)/test/auth go run $(APP_MAIN)
+build: build-accounts build-characters build-chat build-gamebackend
+build-%:
+	go build -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*
+
+run: run-accounts run-characters run-chat run-gamebackend
+run-%:
+	go run $(ROOT_DIR)/cmd/$*
 
 deploy: aws-docker-login push
 
-build-image:
-	docker build -t sro-accounts -f Dockerfile ..
+build-image: build-image-accounts build-image-characters build-image-gamebackend
+build-image-%:
+	docker build -t sro-$* -f build/$*.Dockerfile .
 
 aws-docker-login:
 	aws ecr get-login-password | docker login --username AWS --password-stdin $(SRO_BASE_REGISTRY)
 
-push-prod: build-image
-	docker tag sro-accounts $(REGISTRY):latest
-	docker tag sro-accounts $(REGISTRY):$(BASE_VERSION)
-	docker tag sro-accounts $(REGISTRY):$(BASE_VERSION)-$(time)
-	docker push $(REGISTRY):latest
-	docker push $(REGISTRY):$(BASE_VERSION)
-	docker push $(REGISTRY):$(BASE_VERSION)-$(time)
+push-prod: push-prod-accounts push-prod-characters push-prod-gamebackend
 
-push: push-dev
-push-%: build-image
-	docker tag sro-accounts $(REGISTRY)/$*:latest
-	docker tag sro-accounts $(REGISTRY)/$*:$(BASE_VERSION)
-	docker tag sro-accounts $(REGISTRY)/$*:$(BASE_VERSION)-$(time)
-	docker push $(REGISTRY)/$*:latest
-	docker push $(REGISTRY)/$*:$(BASE_VERSION)
-	docker push $(REGISTRY)/$*:$(BASE_VERSION)-$(time)
+push-prod-%: build-image-%
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:latest
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)-$(time)
+	docker push $(SRO_BASE_REGISTRY)/$*:latest
+	docker push $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)
+	docker push $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)-$(time)
+
+push-qa-%: build-image-%
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:latest
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)-$(time)
+	docker push $(SRO_BASE_REGISTRY)/$*/qa:latest
+	docker push $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)
+	docker push $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)-$(time)
+
+push-qa-%: build-image-%
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:latest
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)
+	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)-$(time)
+	docker push $(SRO_BASE_REGISTRY)/$*/dev:latest
+	docker push $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)
+	docker push $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)-$(time)
 
 .PHONY: clean-protos protos $(PROTO_FILES)
 

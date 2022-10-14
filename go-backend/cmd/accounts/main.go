@@ -1,19 +1,23 @@
 package main
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
+	"github.com/uptrace/uptrace-go/uptrace"
+	"go.opentelemetry.io/otel"
 	"net"
 	"net/http"
 )
 
 type appConfig struct {
-	Accounts config.Server `yaml:"accounts"`
-	KeyDir   string        `yaml:"keyDir"`
-	DBFile   string        `yaml:"dbFile"`
+	Accounts config.Server        `yaml:"accounts"`
+	KeyDir   string               `yaml:"keyDir"`
+	DBFile   string               `yaml:"dbFile"`
+	Uptrace  config.UptraceConfig `yaml:"uptrace"`
 }
 
 var (
@@ -35,6 +39,16 @@ func init() {
 }
 
 func main() {
+	ctx := context.Background()
+	uptrace.ConfigureOpentelemetry(
+		uptrace.WithDSN(conf.Uptrace.DSN()),
+		uptrace.WithServiceName("accounts_service"),
+		uptrace.WithServiceName("v1.0.0"),
+	)
+	defer uptrace.Shutdown(ctx)
+
+	ctx, _ = otel.Tracer("accounts").Start(ctx, "main")
+
 	db, err := repository.ConnectFromFile(conf.DBFile)
 	helpers.Check(err, "db connect from file")
 
@@ -51,10 +65,10 @@ func main() {
 	jwtService, err := service.NewJWTService(conf.KeyDir)
 	helpers.Check(err, "jwt service")
 
-	grpcServer, gwmux, err := NewServer(userService, permissionService, roleService, jwtService)
+	grpcServer, gwmux, err := NewServer(userService, permissionService, roleService, jwtService, ctx)
 	helpers.Check(err, "create grpc server")
 
-	seedDatabaseIfNeeded(userService, permissionService, roleService, grpcServer.GetServiceInfo())
+	seedDatabaseIfNeeded(ctx, userService, permissionService, roleService, grpcServer.GetServiceInfo())
 
 	lis, err := net.Listen("tcp", conf.Accounts.Address())
 	helpers.Check(err, "listen")

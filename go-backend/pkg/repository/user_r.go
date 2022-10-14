@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"time"
@@ -14,18 +15,18 @@ type userRepository struct {
 }
 
 type UserRepository interface {
-	Create(*model.User) (*model.User, error)
-	Save(*model.User) (*model.User, error)
-	AddToRole(*model.User, *model.Role) error
-	RemFromRole(*model.User, *model.Role) error
+	Create(context.Context, *model.User) (*model.User, error)
+	Save(context.Context, *model.User) (*model.User, error)
+	AddToRole(context.Context, *model.User, *model.Role) error
+	RemFromRole(context.Context, *model.User, *model.Role) error
 	WithTrx(*gorm.DB) UserRepository
-	FindById(id uint) *model.User
-	FindByEmail(email string) *model.User
-	FindByUsername(username string) *model.User
+	FindById(ctx context.Context, id uint) *model.User
+	FindByEmail(ctx context.Context, email string) *model.User
+	FindByUsername(ctx context.Context, username string) *model.User
 	Migrate() error
-	All() []*model.User
-	Ban(user *model.User) error
-	UnBan(user *model.User) error
+	All(context.Context) []*model.User
+	Ban(ctx context.Context, user *model.User) error
+	UnBan(ctx context.Context, user *model.User) error
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
@@ -34,18 +35,18 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (u userRepository) Create(user *model.User) (*model.User, error) {
+func (u userRepository) Create(ctx context.Context, user *model.User) (*model.User, error) {
 	err := user.Validate()
 	if err != nil {
 		return user, err
 	}
 
-	conflict := u.FindByEmail(user.Email)
+	conflict := u.FindByEmail(ctx, user.Email)
 	if conflict.Exists() {
 		return user, fmt.Errorf("email is already taken")
 	}
 
-	conflict = u.FindByUsername(user.Username)
+	conflict = u.FindByUsername(ctx, user.Username)
 	if conflict.Exists() {
 		return user, fmt.Errorf("username is already taken")
 	}
@@ -56,31 +57,31 @@ func (u userRepository) Create(user *model.User) (*model.User, error) {
 	}
 
 	user.Password = string(hashedPass)
-	err = u.DB.Create(&user).Error
+	err = u.DB.WithContext(ctx).Create(&user).Error
 
 	return user, err
 }
 
-func (u userRepository) Save(user *model.User) (*model.User, error) {
-	conflict := u.FindByEmail(user.Email)
+func (u userRepository) Save(ctx context.Context, user *model.User) (*model.User, error) {
+	conflict := u.FindByEmail(ctx, user.Email)
 	if conflict.Exists() && user.ID != conflict.ID {
 		return user, fmt.Errorf("email is already taken")
 	}
 
-	conflict = u.FindByUsername(user.Username)
+	conflict = u.FindByUsername(ctx, user.Username)
 	if conflict.Exists() && user.ID != conflict.ID {
 		return user, fmt.Errorf("username is already taken")
 	}
 
-	return user, u.DB.Save(&user).Error
+	return user, u.DB.WithContext(ctx).Save(&user).Error
 }
 
-func (u userRepository) AddToRole(user *model.User, role *model.Role) error {
-	return u.DB.Model(&user).Association("Roles").Append([]model.Role{*role})
+func (u userRepository) AddToRole(ctx context.Context, user *model.User, role *model.Role) error {
+	return u.DB.WithContext(ctx).Model(&user).Association("Roles").Append([]model.Role{*role})
 }
 
-func (u userRepository) RemFromRole(user *model.User, role *model.Role) error {
-	return u.DB.Model(&user).Association("Roles").Delete([]model.Role{*role})
+func (u userRepository) RemFromRole(ctx context.Context, user *model.User, role *model.Role) error {
+	return u.DB.WithContext(ctx).Model(&user).Association("Roles").Delete([]model.Role{*role})
 }
 
 func (u userRepository) WithTrx(trx *gorm.DB) UserRepository {
@@ -92,21 +93,21 @@ func (u userRepository) WithTrx(trx *gorm.DB) UserRepository {
 	return u
 }
 
-func (u userRepository) FindById(id uint) *model.User {
+func (u userRepository) FindById(ctx context.Context, id uint) *model.User {
 	var user *model.User
-	u.DB.Where("id=?", id).Preload("Roles").Find(&user)
+	u.DB.WithContext(ctx).Where("id=?", id).Preload("Roles").Find(&user)
 	return user
 }
 
-func (u userRepository) FindByEmail(email string) *model.User {
+func (u userRepository) FindByEmail(ctx context.Context, email string) *model.User {
 	var user *model.User
-	u.DB.Where("email=?", email).Preload("Roles").Find(&user)
+	u.DB.WithContext(ctx).Where("email=?", email).Preload("Roles").Find(&user)
 	return user
 }
 
-func (u userRepository) FindByUsername(username string) *model.User {
+func (u userRepository) FindByUsername(ctx context.Context, username string) *model.User {
 	var user *model.User
-	u.DB.Where("username=?", username).Preload("Roles").Find(&user)
+	u.DB.WithContext(ctx).Where("username=?", username).Preload("Roles").Find(&user)
 	return user
 }
 
@@ -114,18 +115,18 @@ func (u userRepository) Migrate() error {
 	return u.DB.AutoMigrate(&model.User{})
 }
 
-func (u userRepository) All() []*model.User {
+func (u userRepository) All(ctx context.Context) []*model.User {
 	var users []*model.User
-	u.DB.Preload("Roles").Find(&users)
+	u.DB.WithContext(ctx).Preload("Roles").Find(&users)
 	return users
 }
 
-func (u userRepository) Ban(user *model.User) error {
+func (u userRepository) Ban(ctx context.Context, user *model.User) error {
 	user.BannedAt = time.Now()
-	return u.DB.Save(&user).Error
+	return u.DB.WithContext(ctx).Save(&user).Error
 }
 
-func (u userRepository) UnBan(user *model.User) error {
+func (u userRepository) UnBan(ctx context.Context, user *model.User) error {
 	user.BannedAt = time.Time{}
-	return u.DB.Save(&user).Error
+	return u.DB.WithContext(ctx).Save(&user).Error
 }

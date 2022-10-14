@@ -5,8 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
-	characterspb "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	utilService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -15,7 +16,8 @@ type connectionServiceServer struct {
 	pb.UnimplementedConnectionServiceServer
 	jwtService utilService.JWTService
 	allocator  aapb.AllocationServiceClient
-	characters characterspb.CharactersServiceClient
+	characters pb.CharactersServiceClient
+	tracer     trace.Tracer
 
 	// localhostMode used to tell whether to search for a server on kubernetes or return a constant localhost connection
 	localhostMode bool
@@ -27,16 +29,18 @@ type connectionServiceServer struct {
 func NewConnectionServiceServer(
 	jwtService utilService.JWTService,
 	allocator aapb.AllocationServiceClient,
-	characters characterspb.CharactersServiceClient,
-	localHostMode bool,
+	characters pb.CharactersServiceClient,
 	namespace string,
+	localHostMode bool,
 ) pb.ConnectionServiceServer {
+
 	return &connectionServiceServer{
 		jwtService:    jwtService,
 		allocator:     allocator,
 		characters:    characters,
 		localhostMode: localHostMode,
 		namespace:     namespace,
+		tracer:        otel.Tracer("connection"),
 	}
 }
 
@@ -51,7 +55,7 @@ func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.Conne
 	// If the current user can't get the character, then deny the request
 	//character, err := s.characters.GetCharacter(
 	//    ctx,
-	//    &characterspb.CharacterTarget{CharacterId: request.CharacterId},
+	//    &pb.CharacterTarget{CharacterId: request.CharacterId},
 	//)
 	//if err != nil {
 	//

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
@@ -9,6 +10,7 @@ import (
 )
 
 func seedDatabaseIfNeeded(
+	ctx context.Context,
 	userService service.UserService,
 	permissionService service.PermissionService,
 	roleService service.RoleService,
@@ -50,18 +52,20 @@ func seedDatabaseIfNeeded(
 		}
 	}
 
-	if len(userService.FindAll()) > 0 {
+	if len(userService.FindAll(ctx)) > 0 {
 		return
 	}
 
-	_, err = userService.Create(&model.User{
-		FirstName: "Wil",
-		LastName:  "Simpson",
-		Username:  "unreal",
-		Email:     "wil@forever.dev",
-		Password:  "password",
-		Roles:     []*model.Role{superAdminRole},
-	})
+	_, err = userService.Create(
+		ctx,
+		&model.User{
+			FirstName: "Wil",
+			LastName:  "Simpson",
+			Username:  "unreal",
+			Email:     "wil@forever.dev",
+			Password:  "password",
+			Roles:     []*model.Role{superAdminRole},
+		})
 
 	if err != nil {
 		log.Errorf("creating super user: %v", err)

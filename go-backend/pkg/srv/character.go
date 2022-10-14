@@ -7,6 +7,8 @@ import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	utilService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -17,6 +19,7 @@ type characterServiceServer struct {
 	pb.UnimplementedCharactersServiceServer
 	characterService service.CharacterService
 	jwtService       utilService.JWTService
+	tracer           trace.Tracer
 }
 
 func NewCharacterServiceServer(
@@ -26,6 +29,7 @@ func NewCharacterServiceServer(
 	return &characterServiceServer{
 		characterService: characterService,
 		jwtService:       jwtService,
+		tracer:           otel.Tracer("characters"),
 	}
 }
 

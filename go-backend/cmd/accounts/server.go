@@ -9,6 +9,7 @@ import (
 	accountService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -18,9 +19,8 @@ func NewServer(
 	p accountService.PermissionService,
 	r accountService.RoleService,
 	jwt service.JWTService,
+	ctx context.Context,
 ) (*grpc.Server, *runtime.ServeMux, error) {
-	ctx := context.Background()
-
 	publicRPCs := map[string]struct{}{
 		"/sro.accounts.HealthService/Health":           {},
 		"/sro.accounts.AuthenticationService/Login":    {},
@@ -28,12 +28,14 @@ func NewServer(
 	}
 
 	authorizationServiceServer := srv.NewAuthorizationServiceServer(u, p, r)
-	authInterceptor := interceptor.NewAuthInterceptor(jwt, publicRPCs, getPermissions(authorizationServiceServer))
+	authInterceptor := interceptor.NewAuthInterceptor(jwt, publicRPCs, getPermissions(ctx, authorizationServiceServer))
 	authorizationServiceServer.AddAuthInterceptor(authInterceptor)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(authInterceptor.Unary(), helpers.UnaryLogRequest()),
 		grpc.ChainStreamInterceptor(authInterceptor.Stream(), helpers.StreamLogRequest()),
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
 
 	gwmux := runtime.NewServeMux()
@@ -95,6 +97,7 @@ func NewServer(
 }
 
 func getPermissions(
+	ctx context.Context,
 	server *srv.AuthorizationServiceServer,
 ) func(userID uint) map[string]bool {
 	return func(userID uint) map[string]bool {
@@ -108,7 +111,7 @@ func getPermissions(
 			return allPerms
 		}
 
-		user := server.UserService.FindById(userID)
+		user := server.UserService.FindById(ctx, userID)
 		if user == nil || !user.Exists() {
 			return map[string]bool{}
 		}

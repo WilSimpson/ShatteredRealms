@@ -9,6 +9,8 @@ import (
 	charactersPb "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +28,7 @@ type AuthorizationServiceServer struct {
 	authInterceptor   *interceptor.AuthInterceptor
 	userUpdates       chan uint64
 	roleUpdates       chan uint64
+	tracer            trace.Tracer
 }
 
 func NewAuthorizationServiceServer(
@@ -39,6 +42,7 @@ func NewAuthorizationServiceServer(
 		roleService:       roleService,
 		userUpdates:       make(chan uint64),
 		roleUpdates:       make(chan uint64),
+		tracer:            otel.Tracer("authorization"),
 	}
 }
 
@@ -50,7 +54,7 @@ func (s *AuthorizationServiceServer) GetAuthorization(
 	ctx context.Context,
 	message *pb.IDMessage,
 ) (*pb.AuthorizationMessage, error) {
-	user := s.UserService.FindById(uint(message.Id))
+	user := s.UserService.FindById(ctx, uint(message.Id))
 	if user == nil || !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -71,7 +75,7 @@ func (s *AuthorizationServiceServer) GetAuthorization(
 }
 
 func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, message *pb.AuthorizationMessage) (*emptypb.Empty, error) {
-	user := s.UserService.FindById(uint(message.UserId))
+	user := s.UserService.FindById(ctx, uint(message.UserId))
 	if user == nil || !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -90,6 +94,7 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 
 	for _, v := range message.Roles {
 		err := s.UserService.AddToRole(
+			ctx,
 			user,
 			&model.Role{
 				Model: gorm.Model{
@@ -108,7 +113,7 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 }
 
 func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, message *pb.AuthorizationMessage) (*emptypb.Empty, error) {
-	user := s.UserService.FindById(uint(message.UserId))
+	user := s.UserService.FindById(ctx, uint(message.UserId))
 	if user == nil || !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -127,6 +132,7 @@ func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, me
 
 	for _, v := range message.Roles {
 		err := s.UserService.RemFromRole(
+			ctx,
 			user,
 			&model.Role{
 				Model: gorm.Model{

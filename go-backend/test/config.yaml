@@ -1,2 +1,23 @@
+accounts:
+  host: ""
+  port: 8080
+  mode: development
+characters:
+  host: ""
+  port: 8081
+  mode: development
+gamebackend:
+  host: ""
+  port: 8082
+  mode: development
+chat:
+  host: ""
+  port: 8180
+  mode: development
+uptrace:
+  host: "localhost"
+  port: 14317
+  id: "2"
+  token: "project2_secret_token"
 dbFile: "/mnt/z/sro/git/go-backend/test/db.yaml"
 authFile: "/mtn/z/sro/git/go-backend/test/auth"

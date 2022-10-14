@@ -57,6 +57,11 @@ var (
 	}
 )
 
+func init() {
+	helpers.SetupLogs()
+	config.SetupConfig(conf)
+}
+
 func main() {
 	jwtService, err := service.NewJWTService(conf.KeyDir)
 	helpers.Check(err, "jwt service")

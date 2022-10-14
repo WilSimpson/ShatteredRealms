@@ -1,22 +1,23 @@
 package service
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"gorm.io/gorm"
 )
 
 type UserService interface {
-	Create(*model.User) (*model.User, error)
-	Save(*model.User) (*model.User, error)
-	AddToRole(*model.User, *model.Role) error
-	RemFromRole(*model.User, *model.Role) error
+	Create(context.Context, *model.User) (*model.User, error)
+	Save(context.Context, *model.User) (*model.User, error)
+	AddToRole(context.Context, *model.User, *model.Role) error
+	RemFromRole(context.Context, *model.User, *model.Role) error
 	WithTrx(*gorm.DB) UserService
-	FindById(id uint) *model.User
-	FindByEmail(email string) *model.User
-	FindAll() []*model.User
-	Ban(user *model.User) error
-	UnBan(user *model.User) error
+	FindById(ctx context.Context, id uint) *model.User
+	FindByEmail(ctx context.Context, email string) *model.User
+	FindAll(context.Context) []*model.User
+	Ban(ctx context.Context, user *model.User) error
+	UnBan(ctx context.Context, user *model.User) error
 }
 
 type userService struct {
@@ -29,20 +30,20 @@ func NewUserService(r repository.UserRepository) UserService {
 	}
 }
 
-func (u userService) Create(user *model.User) (*model.User, error) {
-	return u.userRepository.Create(user)
+func (u userService) Create(ctx context.Context, user *model.User) (*model.User, error) {
+	return u.userRepository.Create(ctx, user)
 }
 
-func (u userService) Save(user *model.User) (*model.User, error) {
-	return u.userRepository.Save(user)
+func (u userService) Save(ctx context.Context, user *model.User) (*model.User, error) {
+	return u.userRepository.Save(ctx, user)
 }
 
-func (u userService) AddToRole(user *model.User, role *model.Role) error {
-	return u.userRepository.AddToRole(user, role)
+func (u userService) AddToRole(ctx context.Context, user *model.User, role *model.Role) error {
+	return u.userRepository.AddToRole(ctx, user, role)
 }
 
-func (u userService) RemFromRole(user *model.User, role *model.Role) error {
-	return u.userRepository.RemFromRole(user, role)
+func (u userService) RemFromRole(ctx context.Context, user *model.User, role *model.Role) error {
+	return u.userRepository.RemFromRole(ctx, user, role)
 }
 
 func (u userService) WithTrx(trx *gorm.DB) UserService {
@@ -50,23 +51,23 @@ func (u userService) WithTrx(trx *gorm.DB) UserService {
 	return u
 }
 
-func (u userService) FindById(id uint) *model.User {
-	return u.userRepository.FindById(id)
+func (u userService) FindById(ctx context.Context, id uint) *model.User {
+	return u.userRepository.FindById(ctx, id)
 }
 
-func (u userService) FindByEmail(email string) *model.User {
-	return u.userRepository.FindByEmail(email)
+func (u userService) FindByEmail(ctx context.Context, email string) *model.User {
+	return u.userRepository.FindByEmail(ctx, email)
 }
 
-func (u userService) FindAll() []*model.User {
-	return u.userRepository.All()
+func (u userService) FindAll(ctx context.Context) []*model.User {
+	return u.userRepository.All(ctx)
 }
 
-func (u userService) Ban(user *model.User) error {
-	return u.userRepository.Ban(user)
+func (u userService) Ban(ctx context.Context, user *model.User) error {
+	return u.userRepository.Ban(ctx, user)
 
 }
 
-func (u userService) UnBan(user *model.User) error {
-	return u.userRepository.UnBan(user)
+func (u userService) UnBan(ctx context.Context, user *model.User) error {
+	return u.userRepository.UnBan(ctx, user)
 }

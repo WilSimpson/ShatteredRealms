@@ -8,6 +8,8 @@ import (
 	accountService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -19,6 +21,7 @@ type authenticationServiceServer struct {
 	userService       accountService.UserService
 	permissionService accountService.PermissionService
 	jwtService        service.JWTService
+	tracer            trace.Tracer
 }
 
 func NewAuthenticationServiceServer(
@@ -30,6 +33,7 @@ func NewAuthenticationServiceServer(
 		userService:       u,
 		permissionService: permissionService,
 		jwtService:        jwt,
+		tracer:            otel.Tracer("authentication"),
 	}
 }
 
@@ -45,7 +49,7 @@ func (s *authenticationServiceServer) Register(
 		Password:  message.Password,
 	}
 
-	user, err := s.userService.Create(user)
+	user, err := s.userService.Create(ctx, user)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -65,7 +69,7 @@ func (s *authenticationServiceServer) Login(
 		return nil, status.Error(codes.InvalidArgument, "Password cannot be empty")
 	}
 
-	user := s.userService.FindByEmail(message.Email)
+	user := s.userService.FindByEmail(ctx, message.Email)
 	if !user.Exists() || user.Login(message.Password) != nil {
 		return nil, status.Error(codes.Unauthenticated, "Invalid username or password")
 	}

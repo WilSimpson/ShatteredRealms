@@ -37,7 +37,7 @@ func (s *userServiceServer) GetAll(
 	ctx context.Context,
 	message *emptypb.Empty,
 ) (*pb.GetAllUsersResponse, error) {
-	users := s.userService.FindAll()
+	users := s.userService.FindAll(ctx)
 	resp := &pb.GetAllUsersResponse{
 		Users: []*pb.UserMessage{},
 	}
@@ -60,7 +60,7 @@ func (s *userServiceServer) Get(
 	ctx context.Context,
 	message *pb.GetUserMessage,
 ) (*pb.GetUserResponse, error) {
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -88,7 +88,7 @@ func (s *userServiceServer) Edit(
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -106,7 +106,7 @@ func (s *userServiceServer) Edit(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	_, err = s.userService.Save(user)
+	_, err = s.userService.Save(ctx, user)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -115,12 +115,12 @@ func (s *userServiceServer) Edit(
 }
 
 func (s *userServiceServer) Ban(ctx context.Context, message *pb.GetUserMessage) (*emptypb.Empty, error) {
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
-	err := s.userService.Ban(user)
+	err := s.userService.Ban(ctx, user)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "unable to ban user: %v", err.Error())
 	}
@@ -128,12 +128,12 @@ func (s *userServiceServer) Ban(ctx context.Context, message *pb.GetUserMessage)
 	return &emptypb.Empty{}, nil
 }
 func (s *userServiceServer) UnBan(ctx context.Context, message *pb.GetUserMessage) (*emptypb.Empty, error) {
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
-	err := s.userService.UnBan(user)
+	err := s.userService.UnBan(ctx, user)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "unable to unban user: %v", err.Error())
 	}
@@ -147,7 +147,7 @@ func (s *userServiceServer) GetStatus(ctx context.Context, message *pb.GetUserMe
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
@@ -161,13 +161,13 @@ func (s *userServiceServer) SetStatus(ctx context.Context, message *pb.StatusReq
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 
-	user := s.userService.FindById(uint(message.UserId))
+	user := s.userService.FindById(ctx, uint(message.UserId))
 	if !user.Exists() {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
 	user.CurrentCharacterId = uint(message.CharacterId)
-	_, err = s.userService.Save(user)
+	_, err = s.userService.Save(ctx, user)
 	if err != nil {
 		if !user.Exists() {
 			return nil, status.Error(codes.Internal, "unable to update user")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,6 +29,11 @@ var (
 		DBFile: "/etc/sro/db.yaml",
 	}
 )
+
+func init() {
+	helpers.SetupLogs()
+	config.SetupConfig(conf)
+}
 
 func main() {
 

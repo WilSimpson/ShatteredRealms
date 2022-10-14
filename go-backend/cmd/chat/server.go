@@ -11,7 +11,7 @@ func NewServer(
 ) (*grpc.Server, *runtime.ServeMux, error) {
 	//ctx := context.Background()
 	//
-	//conn, err := grpc.Dial(conf.AccountsAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//conn, err := srv.DialClientWithTelemetry(conf.Accounts.Address())
 	//if err != nil {
 	//    return nil, nil, err
 	//}

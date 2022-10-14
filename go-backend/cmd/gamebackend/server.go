@@ -5,8 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/srv"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"io/ioutil"
 	"time"
 )
@@ -28,62 +26,43 @@ func NewServer(
 ) (*grpc.Server, *runtime.ServeMux, error) {
 	ctx := context.Background()
 
-	authorizationServer, err := grpc.Dial(conf.AccountsAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	charactersServer, err := grpc.Dial(conf.CharactersAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var publicRPCs = map[string]struct{}{
-		"/sro.gamebackend.ConnectionService/Connect": {},
-	}
-
-	authInterceptor := interceptor.NewAuthInterceptor(
+	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
 		jwt,
-		publicRPCs,
-		srv.GetPermissions(pb.NewAuthorizationServiceClient(authorizationServer), jwt, "sro.com/gamebackend/v1"),
+		conf.Accounts.Address(),
+		map[string]struct{}{
+			"/sro.gamebackend.ConnectionService/Connect": {},
+		},
 	)
 
-	go srv.ProcessRoleUpdates(pb.NewAuthorizationServiceClient(authorizationServer), authInterceptor, jwt, "sro.com/gamebackend/v1")
-	go srv.ProcessUserUpdates(pb.NewAuthorizationServiceClient(authorizationServer), authInterceptor, jwt, "sro.com/gamebackend/v1")
-
-	localHostMode := conf.Mode == ModeLocalHost
-
-	var allocatorServer *grpc.ClientConn
-	if !localHostMode {
-		allocatorServer, err = dialAgonesAllocatorServer()
+	localhostMode := conf.GameBackend.Mode == config.ModeDevelopment
+	var allocator aapb.AllocationServiceClient
+	if !localhostMode {
+		client, err := dialAgonesAllocatorServer()
 		if err != nil {
 			return nil, nil, err
 		}
+		allocator = aapb.NewAllocationServiceClient(client)
 	}
 
-	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(authInterceptor.Unary(), helpers.UnaryLogRequest()),
-		grpc.ChainStreamInterceptor(authInterceptor.Stream(), helpers.StreamLogRequest()),
-	)
-
-	gwmux := runtime.NewServeMux()
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	charactersClient, err := srv.DialOtelGrpc(conf.Characters.Address())
+	if err != nil {
+		return nil, nil, err
 	}
+	characters := pb.NewCharactersServiceClient(charactersClient)
 
 	connectionServiceServer := srv.NewConnectionServiceServer(
 		jwt,
-		aapb.NewAllocationServiceClient(allocatorServer),
-		pb.NewCharactersServiceClient(charactersServer),
-		localHostMode,
-		conf.AgonesNamespace,
+		allocator,
+		characters,
+		conf.Agones.Namespace,
+		localhostMode,
 	)
 
 	pb.RegisterConnectionServiceServer(grpcServer, connectionServiceServer)
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Address(),
+		conf.GameBackend.Address(),
 		opts,
 	)
 
@@ -91,17 +70,17 @@ func NewServer(
 }
 
 func dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
-	clientKey, err := ioutil.ReadFile(conf.AgonesKeyFile)
+	clientKey, err := ioutil.ReadFile(conf.Agones.KeyFile)
 	if err != nil {
 		return nil, err
 	}
 
-	clientCert, err := ioutil.ReadFile(conf.AgonesCertFile)
+	clientCert, err := ioutil.ReadFile(conf.Agones.CertFile)
 	if err != nil {
 		return nil, err
 	}
 
-	caCert, err := ioutil.ReadFile(conf.AgonesCaCertFile)
+	caCert, err := ioutil.ReadFile(conf.Agones.CaCertFile)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +90,7 @@ func dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	return grpc.Dial(conf.AgonesAllocatorAddress(), opt)
+	return grpc.Dial(conf.Agones.Allocator.Address(), opt)
 }
 
 // createRemoteClusterDialOption creates a grpc client dial option with TLS configuration.

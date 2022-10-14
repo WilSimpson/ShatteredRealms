@@ -3,12 +3,17 @@ package srv
 import (
 	"context"
 	"fmt"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang-jwt/jwt"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -133,7 +138,7 @@ func ProcessUserUpdates(
 ) {
 	userUpdatesClient, err := authorizationClient.SubscribeUserUpdates(serverAuthContext(jwtService, serviceAuthName), &emptypb.Empty{})
 	if err != nil {
-		log.Error("Unable to subscribe to user updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
+		log.Errorf("Unable to subscribe to user updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
 		time.Sleep(retryAfter)
 		ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
 		return
@@ -143,7 +148,7 @@ func ProcessUserUpdates(
 		msg, err := userUpdatesClient.Recv()
 
 		if err == nil {
-			log.Debug("Update to user %d permissions. Clearing permissions cache for that user.", msg.Id)
+			log.Debugf("Update to user %d permissions. Clearing permissions cache for that user.", msg.Id)
 			err = interceptor.ClearUserCache(uint(msg.Id))
 			if err != nil {
 				log.Warning("Clearing cache: %v", err)
@@ -154,7 +159,7 @@ func ProcessUserUpdates(
 			ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		} else {
-			log.Error("User updates: %v.", err)
+			log.Errorf("User updates: %v.", err)
 			log.Infof("Retrying connection in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
 			ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
@@ -171,7 +176,7 @@ func ProcessRoleUpdates(
 ) {
 	roleUpdatesClient, err := authorizationClient.SubscribeRoleUpdates(serverAuthContext(jwtService, serviceAuthName), &emptypb.Empty{})
 	if err != nil {
-		log.Error("Unable to subscribe to role updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
+		log.Errorf("Unable to subscribe to role updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
 		time.Sleep(retryAfter)
 		ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
 		return
@@ -191,7 +196,7 @@ func ProcessRoleUpdates(
 			ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		} else {
-			log.Error("Role Updates: %v.", err)
+			log.Errorf("Role Updates: %v.", err)
 			log.Infof("Retrying connection in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
 			ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
@@ -209,4 +214,54 @@ func serverAuthContext(jwtService service.JWTService, authorizer string) context
 		},
 	)
 	return metadata.NewOutgoingContext(context.Background(), md)
+}
+
+func DialOtelGrpc(address string) (*grpc.ClientConn, error) {
+	return grpc.Dial(address, insecureOtelGrpcDialOpts()...)
+}
+
+func otelGrpcDialOpts() []grpc.DialOption {
+	return []grpc.DialOption{
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	}
+}
+
+func insecureOtelGrpcDialOpts() []grpc.DialOption {
+	return []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	}
+}
+
+func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, publicRPCs map[string]struct{}) (*grpc.Server, *runtime.ServeMux, []grpc.DialOption, error) {
+	if publicRPCs == nil {
+		publicRPCs = make(map[string]struct{})
+	}
+
+	conn, err := grpc.Dial(
+		accountsAddress,
+		insecureOtelGrpcDialOpts()...,
+	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	authInterceptor := interceptor.NewAuthInterceptor(
+		jwt,
+		publicRPCs,
+		GetPermissions(pb.NewAuthorizationServiceClient(conn), jwt, "sro.com/characters/v1"),
+	)
+
+	go ProcessRoleUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, "sro.com/characters/v1")
+	go ProcessUserUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, "sro.com/characters/v1")
+
+	return grpc.NewServer(
+			grpc.ChainUnaryInterceptor(authInterceptor.Unary(), helpers.UnaryLogRequest()),
+			grpc.ChainStreamInterceptor(authInterceptor.Stream(), helpers.StreamLogRequest()),
+		),
+		runtime.NewServeMux(),
+		insecureOtelGrpcDialOpts(),
+		nil
 }

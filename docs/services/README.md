@@ -79,22 +79,75 @@ kubectl exec -t -n sro-dev pg-client \
 To install the account services, apply the configurations with replacing `{{DATABASE_FILE}}` with the correct database file format. Check
 the account microservice for more information.
 ```
-export DATABASE_PASSWORD=$(kubectl get secret -n sro postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
-export DATABASE_FILE=$(cat prod/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$(echo $DATABASE_PASSWORD)/g" | base64 -w 0)
+DATABASE_PASSWORD=$(kubectl get secret -n sro postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DATABASE_FILE=$(cat prod/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$DATABASE_PASSWORD/g" | base64 -w 0)
 istioctl kube-inject -f prod/accounts.yaml | \
-  sed "s/{{DATABASE_FILE}}/$(echo $DATABASE_FILE)/g" | \
+  sed "s/{{DATABASE_FILE}}/$DATABASE_FILE/g" | \
   kubectl apply -f -
 
-export DATABASE_PASSWORD=$(kubectl get secret -n sro-qa postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
-export DATABASE_FILE=$(cat qa/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$(echo $DATABASE_PASSWORD)/g" | base64 -w 0)
+DATABASE_PASSWORD=$(kubectl get secret -n sro-qa postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DATABASE_FILE=$(cat qa/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$DATABASE_PASSWORD/g" | base64 -w 0)
 istioctl kube-inject -f qa/accounts.yaml | \
-  sed "s/{{DATABASE_FILE}}/$(echo $DATABASE_FILE)/g" | \
+  sed "s/{{DATABASE_FILE}}/$DATABASE_FILE/g" | \
   kubectl apply -f -
 
-export DATABASE_PASSWORD=$(kubectl get secret -n sro-dev postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
-export DATABASE_FILE=$(cat dev/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$(echo $DATABASE_PASSWORD)/g" | base64 -w 0)
+DATABASE_PASSWORD=$(kubectl get secret -n sro-dev postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DATABASE_FILE=$(cat dev/files/accounts-db.yaml | sed "s/{{DATABASE_PASSWORD}}/$DATABASE_PASSWORD/g" | base64 -w 0)
 istioctl kube-inject -f dev/accounts.yaml | \
-  sed "s/{{DATABASE_FILE}}/$(echo $DATABASE_FILE)/g" | \
+  sed "s/{{DATABASE_FILE}}/$DATABASE_FILE/g" | \
+  kubectl apply -f -
+```
+
+## Characters 
+The account service requires an `characters` database to be created. First create that for each environment.
+```
+kubectl exec -t -n sro pg-client \
+  -- bash -c "PGPASSWORD=$(kubectl get secret -n sro postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d) \
+  psql \
+    -h postgres-postgresql-ha-pgpool \
+    -p 5432 \
+    -U postgres \
+    -d postgres \
+    -c 'create database characters;'"
+
+kubectl exec -t -n sro-qa pg-client \
+  -- bash -c "PGPASSWORD=$(kubectl get secret -n sro-qa postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d) \
+  psql \
+    -h postgres-postgresql-ha-pgpool \
+    -p 5432 \
+    -U postgres \
+    -d postgres \
+    -c 'create database characters;'"
+
+kubectl exec -t -n sro-dev pg-client \
+  -- bash -c "PGPASSWORD=$(kubectl get secret -n sro-dev postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d) \
+  psql \
+    -h postgres-postgresql-ha-pgpool \
+    -p 5432 \
+    -U postgres \
+    -d postgres \
+    -c 'create database characters;'"
+```
+
+To install the account services, apply the configurations with replacing `{{DATABASE_FILE}}` with the correct database file format. Check
+the account microservice for more information.
+```
+PASSWORD=$(kubectl get secret -n sro postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DB_FILE=$(cat prod/files/characters-db.yaml | sed "s/{{PASSWORD}}/$PASSWORD/g" | base64 -w 0)
+istioctl kube-inject -f prod/characters.yaml | \
+  sed "s/{{DATABASE_FILE}}/$DB_FILE/g" | \
+  kubectl apply -f -
+
+PASSWORD=$(kubectl get secret -n sro-qa postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DB_FILE=$(cat qa/files/characters-db.yaml | sed "s/{{PASSWORD}}/$PASSWORD/g" | base64 -w 0)
+istioctl kube-inject -f qa/characters.yaml | \
+  sed "s/{{DATABASE_FILE}}/$DB_FILE/g" | \
+  kubectl apply -f -
+
+PASSWORD=$(kubectl get secret -n sro-dev postgres-postgresql-ha-postgresql -o jsonpath='{.data.postgresql-password}' | base64 -d)
+DB_FILE=$(cat dev/files/characters-db.yaml | sed "s/{{PASSWORD}}/$PASSWORD/g" | base64 -w 0)
+istioctl kube-inject -f /characters.yaml | \
+  sed "s/{{DATABASE_FILE}}/$DB_FILE/g" | \
   kubectl apply -f -
 ```
 
@@ -113,7 +166,37 @@ helm repo add agones https://agones.dev/chart/stable
 helm repo update
 helm install agones --namespace agones-system \
   --create-namespace \
-  --set "gameservers.namespaces={sro-gs,sro-qa-gs,sro-dev-gs}" \
+  --set "gameservers.namespaces={sro,sro-qa,sro-dev}" \
   --set "agones.featureGates=PlayerTracking=true" \
   agones/agones
+```
+
+Set the external load balancer IP for agones
+```bash
+EXTERNAL_IP=$(kubectl get services agones-allocator -n agones-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+helm upgrade --install --wait --reuse-values \
+   --set agones.allocator.service.loadBalancerIP=${EXTERNAL_IP} \
+   agones agones/agones --namespace agones-system
+```
+
+## Game Server
+Apply the production fleet
+```bash
+kubectl apply -f prod/fleet.yaml
+```
+
+## Server Finder
+Copy the allocator ca cert to the namespaces `sro` `sro-qa` and `sro-dev` namespaces.
+```bash
+kubectl delete secret allocator-tls-ca -n sro
+kubectl delete secret allocator-tls-ca -n sro-qa
+kubectl delete secret allocator-tls-ca -n sro-dev
+kubectl get secret allocator-tls-ca -n agones-system -o yaml | sed 's/namespace: .*/namespace: sro/' | kubectl apply -f -
+kubectl get secret allocator-tls-ca -n agones-system -o yaml | sed 's/namespace: .*/namespace: sro-qa/' | kubectl apply -f -
+kubectl get secret allocator-tls-ca -n agones-system -o yaml | sed 's/namespace: .*/namespace: sro-dev/' | kubectl apply -f -
+```
+
+Apply the configurations
+```bash
+istioctl kube-inject -f prod/gamebackend.yaml | kubectl apply -f -
 ```

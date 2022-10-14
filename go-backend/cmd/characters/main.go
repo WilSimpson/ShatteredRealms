@@ -34,6 +34,11 @@ var (
 	}
 )
 
+func init() {
+	helpers.SetupLogs()
+	config.SetupConfig(conf)
+}
+
 func main() {
 	db, err := repository.ConnectFromFile(conf.DBFile)
 	helpers.Check(err, "db connect from file")
