@@ -16,20 +16,34 @@ import (
 type appConfig struct {
 	Accounts config.Server        `yaml:"accounts"`
 	KeyDir   string               `yaml:"keyDir"`
-	DBFile   string               `yaml:"dbFile"`
 	Uptrace  config.UptraceConfig `yaml:"uptrace"`
 }
 
 var (
 	conf = &appConfig{
 		Accounts: config.Server{
-			Port:     8080,
-			Host:     "",
+			Local: config.ServerAddress{
+				Port: 8080,
+				Host: "",
+			},
+			Remote: config.ServerAddress{
+				Port: 8080,
+				Host: "",
+			},
 			Mode:     "development",
 			LogLevel: log.InfoLevel,
+			DB: repository.DBPoolConfig{
+				Master: repository.DBConfig{
+					Host:     "localhost",
+					Port:     "5432",
+					Name:     "accounts",
+					Username: "postgres",
+					Password: "password",
+				},
+				Slaves: []repository.DBConfig{},
+			},
 		},
 		KeyDir: "/etc/sro/auth",
-		DBFile: "/etc/sro/db.yaml",
 	}
 )
 
@@ -43,13 +57,12 @@ func main() {
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
 		uptrace.WithServiceName("accounts_service"),
-		uptrace.WithServiceName("v1.0.0"),
+		uptrace.WithServiceVersion("v1.0.0"),
 	)
 	defer uptrace.Shutdown(ctx)
 
-	ctx, _ = otel.Tracer("accounts").Start(ctx, "main")
-
-	db, err := repository.ConnectFromFile(conf.DBFile)
+	ctx, span := otel.Tracer("accounts").Start(ctx, "main")
+	db, err := repository.Connect(conf.Accounts.DB)
 	helpers.Check(err, "db connect from file")
 
 	permissionRepository := repository.NewPermissionRepository(db)
@@ -70,16 +83,16 @@ func main() {
 
 	seedDatabaseIfNeeded(ctx, userService, permissionService, roleService, grpcServer.GetServiceInfo())
 
-	lis, err := net.Listen("tcp", conf.Accounts.Address())
+	lis, err := net.Listen("tcp", conf.Accounts.Local.Address())
 	helpers.Check(err, "listen")
 
 	server := &http.Server{
-		Addr:    conf.Accounts.Address(),
+		Addr:    conf.Accounts.Local.Address(),
 		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
 	}
 
 	log.Info("Server starting")
-
+	span.End()
 	err = server.Serve(lis)
 	helpers.Check(err, "serve")
 }

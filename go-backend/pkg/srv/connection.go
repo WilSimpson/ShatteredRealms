@@ -3,9 +3,9 @@ package srv
 import (
 	aapb "agones.dev/agones/pkg/allocation/go"
 	"context"
-	"fmt"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	utilService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -96,7 +96,7 @@ func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.Conne
 
 	allocatorResp, err := s.allocator.Allocate(serverAuthContext(s.jwtService, "sro.com/gamebackend/v1/"), allocatorReq)
 	if err != nil {
-		fmt.Println("err 2")
+		log.Errorf("allocate: %v", err)
 		//fmt.Printf("world: %s", world)
 		return nil, status.Error(codes.Internal, err.Error())
 	}

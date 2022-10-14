@@ -14,28 +14,27 @@ import (
 	"time"
 )
 
-// Connection Information on how to connect to the database
-type Connection struct {
-	Host     string `yaml:"host"`
+// DBConfig Information on how to connect to the database
+type DBConfig struct {
+	Host     string `yaml:"hoster"`
 	Port     string `yaml:"port"`
 	Name     string `yaml:"name"`
-	Username string `yaml:"user"`
-	Password string `yaml:"pass"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
-// DBConnections Defines the master and slave connections to a replicated database. Slaves may be empty.
-type DBConnections struct {
-	Master Connection   `yaml:"master"`
-	Slaves []Connection `yaml:"slaves"`
+// DBPoolConfig Defines the master and slave connections to a replicated database. Slaves may be empty.
+type DBPoolConfig struct {
+	Master DBConfig   `yaml:"master"`
+	Slaves []DBConfig `yaml:"slaves"`
 }
 
-// DBConnect Initializes the connection to a Postgres database
-func DBConnect(connections DBConnections) (*gorm.DB, error) {
-	config, err := pgx.ParseConfig(connections.Master.PostgresDSN())
+// Connect Initializes the connection to a Postgres database
+func Connect(pool DBPoolConfig) (*gorm.DB, error) {
+	config, err := pgx.ParseConfig(pool.Master.PostgresDSN())
 	if err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
-
 	sqlDB := stdlib.OpenDB(*config)
 
 	sqlDB.SetConnMaxLifetime(time.Second)
@@ -49,9 +48,9 @@ func DBConnect(connections DBConnections) (*gorm.DB, error) {
 		return nil, fmt.Errorf("gorm: %w", err)
 	}
 
-	if len(connections.Slaves) > 0 {
-		replicas := make([]gorm.Dialector, len(connections.Slaves))
-		for _, slave := range connections.Slaves {
+	if len(pool.Slaves) > 0 {
+		replicas := make([]gorm.Dialector, len(pool.Slaves))
+		for _, slave := range pool.Slaves {
 			replicas = append(replicas, postgres.Open(slave.PostgresDSN()))
 		}
 
@@ -61,14 +60,14 @@ func DBConnect(connections DBConnections) (*gorm.DB, error) {
 		}))
 	}
 
-	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(connections.Master.Name))); err != nil {
+	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(pool.Master.Name))); err != nil {
 		return nil, err
 	}
 
 	return db, err
 }
 
-func (c Connection) MySQLDSN() string {
+func (c DBConfig) MySQLDSN() string {
 	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		c.Username,
@@ -79,7 +78,7 @@ func (c Connection) MySQLDSN() string {
 	)
 }
 
-func (c Connection) PostgresDSN() string {
+func (c DBConfig) PostgresDSN() string {
 	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
 	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
 		c.Username,
@@ -96,11 +95,11 @@ func ConnectFromFile(filePath string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	c := &DBConnections{}
+	c := &DBPoolConfig{}
 	err = yaml.Unmarshal(file, c)
 	if err != nil {
 		return nil, err
 	}
 
-	return DBConnect(*c)
+	return Connect(*c)
 }

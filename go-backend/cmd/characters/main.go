@@ -16,24 +16,40 @@ type appConfig struct {
 	Characters config.Server        `yaml:"characters"`
 	Accounts   config.Server        `yaml:"accounts"`
 	KeyDir     string               `yaml:"keyDir"`
-	DBFile     string               `yaml:"dbFile"`
 	Uptrace    config.UptraceConfig `yaml:"uptrace"`
 }
 
 var (
 	conf = &appConfig{
 		Characters: config.Server{
-			Port:     8081,
-			Host:     "",
+			Local: config.ServerAddress{
+				Port: 8081,
+				Host: "",
+			},
+			Remote: config.ServerAddress{
+				Port: 8081,
+				Host: "",
+			},
 			Mode:     "development",
 			LogLevel: log.InfoLevel,
+			DB: repository.DBPoolConfig{
+				Master: repository.DBConfig{
+					Host:     "localhost",
+					Port:     "5432",
+					Name:     "characters",
+					Username: "postgres",
+					Password: "password",
+				},
+				Slaves: []repository.DBConfig{},
+			},
 		},
 		Accounts: config.Server{
-			Port: 8080,
-			Host: "",
+			Remote: config.ServerAddress{
+				Port: 8080,
+				Host: "",
+			},
 		},
 		KeyDir: "/etc/sro/auth",
-		DBFile: "/etc/sro/db.yaml",
 	}
 )
 
@@ -47,11 +63,11 @@ func main() {
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
 		uptrace.WithServiceName("accounts_service"),
-		uptrace.WithServiceName("v1.0.0"),
+		uptrace.WithServiceVersion("v1.0.0"),
 	)
 	defer uptrace.Shutdown(ctx)
 
-	db, err := repository.ConnectFromFile(conf.DBFile)
+	db, err := repository.Connect(conf.Characters.DB)
 	helpers.Check(err, "db connect from file")
 
 	characterRepo := repository.NewCharacterRepository(db)
@@ -64,11 +80,11 @@ func main() {
 	grpcServer, gwmux, err := NewServer(characterService, jwtService)
 	helpers.Check(err, "create grpc server")
 
-	lis, err := net.Listen("tcp", conf.Characters.Address())
+	lis, err := net.Listen("tcp", conf.Characters.Local.Address())
 	helpers.Check(err, "listen")
 
 	server := &http.Server{
-		Addr:    conf.Characters.Address(),
+		Addr:    conf.Characters.Local.Address(),
 		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
 	}
 

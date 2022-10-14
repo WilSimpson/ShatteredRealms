@@ -16,14 +16,22 @@ type appConfig struct {
 var (
 	conf = &appConfig{
 		Chat: config.Server{
-			Port:     8180,
-			Host:     "",
+			Local: config.ServerAddress{
+				Port: 8180,
+				Host: "",
+			},
+			Remote: config.ServerAddress{
+				Port: 8180,
+				Host: "",
+			},
 			Mode:     "development",
 			LogLevel: log.InfoLevel,
 		},
 		Accounts: config.Server{
-			Port: 8080,
-			Host: "",
+			Remote: config.ServerAddress{
+				Port: 8080,
+				Host: "",
+			},
 		},
 		KeyDir: "/etc/sro/auth",
 		DBFile: "/etc/sro/db.yaml",

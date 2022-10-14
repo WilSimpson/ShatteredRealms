@@ -46,7 +46,7 @@ func NewServer(
 	err := pb.RegisterAuthenticationServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Accounts.Address(),
+		conf.Accounts.Local.Address(),
 		opts,
 	)
 	if err != nil {
@@ -58,7 +58,7 @@ func NewServer(
 	err = pb.RegisterUserServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Accounts.Address(),
+		conf.Accounts.Local.Address(),
 		opts,
 	)
 	if err != nil {
@@ -70,7 +70,7 @@ func NewServer(
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Accounts.Address(),
+		conf.Accounts.Local.Address(),
 		opts,
 	)
 	if err != nil {
@@ -81,7 +81,7 @@ func NewServer(
 	err = pb.RegisterAuthorizationServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Accounts.Address(),
+		conf.Accounts.Local.Address(),
 		opts,
 	)
 	if err != nil {

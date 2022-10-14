@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gamebackend
-  namespace: sro
+  namespace: sro-dev
   labels:
     app: gamebackend
     version: v1
@@ -73,7 +73,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gamebackend
-  namespace: sro
+  namespace: sro-dev
   labels:
     app: gamebackend
     service: gamebackend

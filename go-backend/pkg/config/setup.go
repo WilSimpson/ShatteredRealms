@@ -11,7 +11,7 @@ func SetupConfig(conf interface{}) {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./")
 	viper.AddConfigPath("./test/")
-	viper.AddConfigPath("/etc/sro/appConfig/")
+	viper.AddConfigPath("/etc/sro/")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigParseError); ok {
 			log.Fatalf("read appConfig: %v", err)

@@ -10,5 +10,5 @@ RUN go build -o /out/gamebackend ./cmd/gamebackend
 FROM alpine:3.15.0
 WORKDIR /app
 COPY --from=build /out/gamebackend ./
-EXPOSE 8080
-CMD [ "./gamebackend", "-port=8888", "-mode=release" ]
+EXPOSE 8082
+CMD [ "./gamebackend" ]

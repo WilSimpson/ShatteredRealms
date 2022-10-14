@@ -10,5 +10,9 @@ type UptraceConfig struct {
 }
 
 func (c *UptraceConfig) DSN() string {
+	if c.Port == 443 {
+		return fmt.Sprintf("https://%s@%s/%s", c.Token, c.Host, c.Id)
+	}
+
 	return fmt.Sprintf("http://%s@%s:%d/%s", c.Token, c.Host, c.Port, c.Id)
 }

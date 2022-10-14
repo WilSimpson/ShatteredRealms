@@ -11,4 +11,4 @@ FROM alpine:3.15.0
 WORKDIR /app
 COPY --from=build /out/characters ./
 EXPOSE 8081
-CMD [ "./characters", "-port=8081", "-mode=release" ]
+CMD [ "./characters" ]

@@ -11,4 +11,4 @@ FROM alpine:3.15.0
 WORKDIR /app
 COPY --from=build /out/accounts ./
 EXPOSE 8080
-CMD [ "./accounts", "-port=8080", "-mode=release" ]
+CMD [ "./accounts" ]

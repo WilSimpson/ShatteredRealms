@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,12 +20,18 @@ var (
 type ServerMode string
 
 type Server struct {
-	Port     uint       `yaml:"port"`
-	Host     string     `yaml:"host"`
-	Mode     ServerMode `yaml:"mode"`
-	LogLevel log.Level  `yaml:"logLevel"`
+	Local    ServerAddress           `yaml:"local"`
+	Remote   ServerAddress           `yaml:"remote"`
+	Mode     ServerMode              `yaml:"mode"`
+	LogLevel log.Level               `yaml:"logLevel"`
+	DB       repository.DBPoolConfig `yaml:"db"`
 }
 
-func (s *Server) Address() string {
+type ServerAddress struct {
+	Port uint   `yaml:"port"`
+	Host string `yaml:"host"`
+}
+
+func (s *ServerAddress) Address() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }

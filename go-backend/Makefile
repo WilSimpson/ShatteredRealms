@@ -79,32 +79,15 @@ build-image-%:
 aws-docker-login:
 	aws ecr get-login-password | docker login --username AWS --password-stdin $(SRO_BASE_REGISTRY)
 
-push-prod: push-prod-accounts push-prod-characters push-prod-gamebackend
+push: push-accounts push-characters push-gamebackend
 
-push-prod-%: build-image-%
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:latest
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)-$(time)
-	docker push $(SRO_BASE_REGISTRY)/$*:latest
-	docker push $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)
-	docker push $(SRO_BASE_REGISTRY)/$*:$(BASE_VERSION)-$(time)
-
-push-qa-%: build-image-%
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:latest
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)-$(time)
-	docker push $(SRO_BASE_REGISTRY)/$*/qa:latest
-	docker push $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)
-	docker push $(SRO_BASE_REGISTRY)/$*/qa:$(BASE_VERSION)-$(time)
-
-push-qa-%: build-image-%
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:latest
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)
-	docker tag sro-$* $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)-$(time)
-	docker push $(SRO_BASE_REGISTRY)/$*/dev:latest
-	docker push $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)
-	docker push $(SRO_BASE_REGISTRY)/$*/dev:$(BASE_VERSION)-$(time)
-
+push-%: build-image-%
+	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
+	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)
+	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(time)
+	docker push $(SRO_REGISTRY)/$*:latest
+	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)
+	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(time)
 .PHONY: clean-protos protos $(PROTO_FILES)
 
 clean-protos:

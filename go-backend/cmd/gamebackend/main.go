@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"net"
@@ -29,29 +30,51 @@ type agonesConfig struct {
 var (
 	conf = &appConfig{
 		GameBackend: config.Server{
-			Port:     8082,
-			Host:     "",
+			Local: config.ServerAddress{
+				Port: 8082,
+				Host: "",
+			},
+			Remote: config.ServerAddress{
+				Port: 8082,
+				Host: "",
+			},
 			Mode:     "development",
 			LogLevel: log.InfoLevel,
+			DB: repository.DBPoolConfig{
+				Master: repository.DBConfig{
+					Host:     "localhost",
+					Port:     "5432",
+					Name:     "gamebackend",
+					Username: "postgres",
+					Password: "password",
+				},
+				Slaves: []repository.DBConfig{},
+			},
 		},
 		Characters: config.Server{
-			Port: 8081,
-			Host: "",
+			Remote: config.ServerAddress{
+				Port: 8081,
+				Host: "",
+			},
 		},
 		Accounts: config.Server{
-			Port: 8080,
-			Host: "",
+			Remote: config.ServerAddress{
+				Port: 8080,
+				Host: "",
+			},
 		},
 		KeyDir: "/etc/sro/auth",
 		DBFile: "/etc/sro/db.yaml",
 		Agones: agonesConfig{
 			KeyFile:    "/etc/sro/auth/agones/client/key",
-			CertFile:   "/etc/sro/auth/agones/client/key",
+			CertFile:   "/etc/sro/auth/agones/client/cert",
 			CaCertFile: "/etc/sro/auth/agones/ca/ca",
 			Namespace:  "default",
 			Allocator: config.Server{
-				Port: 443,
-				Host: "",
+				Remote: config.ServerAddress{
+					Port: 443,
+					Host: "",
+				},
 			},
 		},
 	}
@@ -60,6 +83,7 @@ var (
 func init() {
 	helpers.SetupLogs()
 	config.SetupConfig(conf)
+	log.Infof("config: %+v", *conf)
 }
 
 func main() {
@@ -69,11 +93,11 @@ func main() {
 	grpcServer, gwmux, err := NewServer(jwtService)
 	helpers.Check(err, "create grpc server")
 
-	lis, err := net.Listen("tcp", conf.GameBackend.Address())
+	lis, err := net.Listen("tcp", conf.GameBackend.Local.Address())
 	helpers.Check(err, "listen")
 
 	server := &http.Server{
-		Addr:    conf.GameBackend.Address(),
+		Addr:    conf.GameBackend.Local.Address(),
 		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
 	}
 

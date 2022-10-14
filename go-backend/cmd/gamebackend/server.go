@@ -23,7 +23,7 @@ func NewServer(
 
 	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
 		jwt,
-		conf.Accounts.Address(),
+		conf.Accounts.Remote.Address(),
 		"gamebackend",
 		map[string]struct{}{
 			"/sro.gamebackend.ConnectionService/Connect": {},
@@ -40,7 +40,7 @@ func NewServer(
 		allocator = aapb.NewAllocationServiceClient(client)
 	}
 
-	charactersClient, err := srv.DialOtelGrpc(conf.Characters.Address())
+	charactersClient, err := srv.DialOtelGrpc(conf.Characters.Remote.Address())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -58,7 +58,7 @@ func NewServer(
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.GameBackend.Address(),
+		conf.GameBackend.Local.Address(),
 		opts,
 	)
 
@@ -86,7 +86,7 @@ func dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	return grpc.Dial(conf.Agones.Allocator.Address(), opt)
+	return grpc.Dial(conf.Agones.Allocator.Remote.Address(), opt)
 }
 
 // createRemoteClusterDialOption creates a grpc client dial option with TLS configuration.

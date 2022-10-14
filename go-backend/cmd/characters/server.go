@@ -17,7 +17,7 @@ func NewServer(
 
 	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
 		jwt,
-		conf.Accounts.Address(),
+		conf.Accounts.Remote.Address(),
 		"characters",
 		nil,
 	)
@@ -27,7 +27,7 @@ func NewServer(
 	err = pb.RegisterCharactersServiceHandlerFromEndpoint(
 		ctx,
 		gwmux,
-		conf.Characters.Address(),
+		conf.Characters.Local.Address(),
 		opts,
 	)
 	if err != nil {
