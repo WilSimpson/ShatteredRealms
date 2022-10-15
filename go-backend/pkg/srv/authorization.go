@@ -9,8 +9,6 @@ import (
 	charactersPb "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,7 +26,6 @@ type AuthorizationServiceServer struct {
 	authInterceptor   *interceptor.AuthInterceptor
 	userUpdates       chan uint64
 	roleUpdates       chan uint64
-	tracer            trace.Tracer
 }
 
 func NewAuthorizationServiceServer(
@@ -42,7 +39,6 @@ func NewAuthorizationServiceServer(
 		roleService:       roleService,
 		userUpdates:       make(chan uint64),
 		roleUpdates:       make(chan uint64),
-		tracer:            otel.Tracer("authorization"),
 	}
 }
 

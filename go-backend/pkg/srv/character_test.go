@@ -5,6 +5,9 @@ import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/srv"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Character", func() {

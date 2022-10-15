@@ -9,6 +9,10 @@ import (
 	"github.com/allegro/bigcache/v3"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,6 +25,10 @@ const (
 	authorizationHeader = "authorization"
 	authorizationScheme = "Bearer "
 	authorizedOtherKey  = "sro:authOther"
+)
+
+var (
+	ErrorUnauthorized = status.Errorf(codes.Unauthenticated, "Invalid permissions")
 )
 
 type AuthInterceptor struct {
@@ -36,6 +44,8 @@ type AuthInterceptor struct {
 	// getUserPermissions function called when a users permissions are not in the cache. Should get the current
 	// permissions for the user and put them in a map, the value of the "Other" field for the permission.
 	getCurrentUserPermissions func(userID uint) map[string]bool
+
+	tracer trace.Tracer
 }
 
 func NewAuthInterceptor(
@@ -53,6 +63,7 @@ func NewAuthInterceptor(
 		publicRPCs:                publicRPCs,
 		userPermissionsCache:      cache,
 		getCurrentUserPermissions: getCurrentUserPermissions,
+		tracer:                    otel.Tracer("auth-interceptor"),
 	}
 }
 
@@ -140,6 +151,8 @@ func (interceptor *AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 }
 
 func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string) (bool, error) {
+	ctx, span := interceptor.tracer.Start(ctx, "authorize")
+	span.SetAttributes(attribute.String("method", method))
 
 	if _, ok := interceptor.publicRPCs[method]; ok {
 		return false, nil
@@ -148,12 +161,16 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 	// Get the token from the request
 	token, err := ExtractAuthToken(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "extract token")
 		return false, err
 	}
 
 	// Get the username from the claim
-	userID, err := ExtractSubFromToken(token, interceptor.jwtService)
+	userID, err := ExtractSubFromToken(ctx, token, interceptor.jwtService)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "no sub")
 		return false, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -163,7 +180,9 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 		return other, nil
 	}
 
-	return false, status.Errorf(codes.Unauthenticated, "Invalid permissions")
+	span.RecordError(ErrorUnauthorized)
+	span.SetStatus(otelcodes.Error, "unauthorized")
+	return false, ErrorUnauthorized
 }
 
 func ExtractAuthToken(ctx context.Context) (string, error) {
@@ -179,8 +198,8 @@ func ExtractAuthToken(ctx context.Context) (string, error) {
 	return strings.TrimPrefix(val, authorizationScheme), nil
 }
 
-func ExtractSubFromToken(token string, jwtService service.JWTService) (uint, error) {
-	claims, err := jwtService.Validate(token)
+func ExtractSubFromToken(ctx context.Context, token string, jwtService service.JWTService) (uint, error) {
+	claims, err := jwtService.Validate(ctx, token)
 	if err != nil {
 		return 0, fmt.Errorf("invalid authentication token")
 	}
@@ -212,7 +231,7 @@ func AuthorizedForTarget(ctx context.Context, jwtService service.JWTService, tar
 		return false, err
 	}
 
-	subId, err := ExtractSubFromToken(token, jwtService)
+	subId, err := ExtractSubFromToken(ctx, token, jwtService)
 	if err != nil {
 		return false, err
 	}

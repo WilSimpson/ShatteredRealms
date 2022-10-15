@@ -6,8 +6,6 @@ import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	utilService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -17,7 +15,6 @@ type connectionServiceServer struct {
 	jwtService utilService.JWTService
 	allocator  aapb.AllocationServiceClient
 	characters pb.CharactersServiceClient
-	tracer     trace.Tracer
 
 	// localhostMode used to tell whether to search for a server on kubernetes or return a constant localhost connection
 	localhostMode bool
@@ -40,7 +37,6 @@ func NewConnectionServiceServer(
 		characters:    characters,
 		localhostMode: localHostMode,
 		namespace:     namespace,
-		tracer:        otel.Tracer("connection"),
 	}
 }
 
@@ -94,10 +90,9 @@ func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.Conne
 		},
 	}
 
-	allocatorResp, err := s.allocator.Allocate(serverAuthContext(s.jwtService, "sro.com/gamebackend/v1/"), allocatorReq)
+	allocatorResp, err := s.allocator.Allocate(serverAuthContext(ctx, s.jwtService, "sro.com/gamebackend/v1/"), allocatorReq)
 	if err != nil {
-		log.Errorf("allocate: %v", err)
-		//fmt.Printf("world: %s", world)
+		log.Errorf("allocating: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
