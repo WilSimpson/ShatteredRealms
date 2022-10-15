@@ -1,7 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"io/ioutil"
 	"time"
 
@@ -9,8 +14,8 @@ import (
 )
 
 type JWTService interface {
-	Create(time.Duration, string, jwt.MapClaims) (string, error)
-	Validate(string) (jwt.MapClaims, error)
+	Create(context.Context, time.Duration, string, jwt.MapClaims) (string, error)
+	Validate(context.Context, string) (jwt.MapClaims, error)
 }
 
 type jwtService struct {
@@ -19,6 +24,8 @@ type jwtService struct {
 
 	// publicKey Public key used for JWT validation
 	publicKey []byte
+
+	tracer trace.Tracer
 }
 
 // NewJWTService Creates a new JWT service from a privateKey and a publicKey. The keys are expected to be RSA256 with PEM
@@ -38,12 +45,17 @@ func NewJWTService(keyDir string) (JWTService, error) {
 	return jwtService{
 		privateKey: privateKey,
 		publicKey:  publicKey,
+		tracer:     otel.Tracer("jwt"),
 	}, nil
 }
 
 // Create creates a JWT token string with a given TTL and content for the claim data. If creation is successful, then
 // the token string is returned with no error. Otherwise the string will be empty and the error will be set.
-func (j jwtService) Create(ttl time.Duration, issuer string, additionalClaims jwt.MapClaims) (string, error) {
+func (j jwtService) Create(ctx context.Context, ttl time.Duration, issuer string, additionalClaims jwt.MapClaims) (string, error) {
+	_, span := j.tracer.Start(ctx, "create")
+	span.SetAttributes(attribute.String("id", additionalClaims["id"].(string)), attribute.String("issuer", issuer), attribute.Int64("duration", ttl.Milliseconds()))
+	defer span.End()
+
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(j.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("create: parse key: %w", err)
@@ -65,6 +77,7 @@ func (j jwtService) Create(ttl time.Duration, issuer string, additionalClaims jw
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(key)
 	if err != nil {
+		span.RecordError(err)
 		return "", fmt.Errorf("create: sign token: %w", err)
 	}
 
@@ -73,26 +86,39 @@ func (j jwtService) Create(ttl time.Duration, issuer string, additionalClaims jw
 
 // Validate Validates a JWT token string. It uses the public key to parse the token. If validation is successful, then
 // the claim data is returned and the error is nil. Otherwise, the interface data will be nil and the error will be set.
-func (j jwtService) Validate(token string) (jwt.MapClaims, error) {
+func (j jwtService) Validate(ctx context.Context, token string) (jwt.MapClaims, error) {
+	_, span := j.tracer.Start(ctx, "validate")
+	defer span.End()
+
 	key, err := jwt.ParseRSAPublicKeyFromPEM(j.publicKey)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "parse key")
 		return nil, fmt.Errorf("validates: parse key: %w", err)
 	}
 
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("incorrect signing method: %v", token.Header["alg"])
+			err = fmt.Errorf("incorrect signing method: %v", token.Header["alg"])
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "invalid signing method")
+			return nil, err
 		}
+
 		return key, nil
 	})
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "parse token")
 		return nil, fmt.Errorf("validation: %w", err)
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	if !ok || !parsedToken.Valid {
-		return nil, fmt.Errorf("validation: invalid")
+		err = fmt.Errorf("validation: invalid")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "invalid claims")
+		return nil, err
 	}
-
 	return claims, nil
 }

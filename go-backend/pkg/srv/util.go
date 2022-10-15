@@ -90,6 +90,7 @@ func ConvertRolesNamesOnly(inRoles []*model.Role) []*pb.UserRole {
 }
 
 func GetPermissions(
+	ctx context.Context,
 	authorizationService pb.AuthorizationServiceClient,
 	jwtService service.JWTService,
 	requestingHost string,
@@ -98,7 +99,7 @@ func GetPermissions(
 		md := metadata.New(
 			map[string]string{
 				"authorization": fmt.Sprintf(
-					"Bearer %s", generateTemporaryServerToken(jwtService, requestingHost),
+					"Bearer %s", generateTemporaryServerToken(ctx, jwtService, requestingHost),
 				),
 			},
 		)
@@ -126,21 +127,22 @@ func GetPermissions(
 	}
 }
 
-func generateTemporaryServerToken(jwtService service.JWTService, requestingHost string) string {
-	out, _ := jwtService.Create(time.Second, requestingHost, jwt.MapClaims{"sub": 0})
+func generateTemporaryServerToken(ctx context.Context, jwtService service.JWTService, requestingHost string) string {
+	out, _ := jwtService.Create(ctx, time.Second, requestingHost, jwt.MapClaims{"sub": 0})
 	return out
 }
 func ProcessUserUpdates(
+	ctx context.Context,
 	authorizationClient pb.AuthorizationServiceClient,
 	interceptor *interceptor.AuthInterceptor,
 	jwtService service.JWTService,
 	serviceAuthName string,
 ) {
-	userUpdatesClient, err := authorizationClient.SubscribeUserUpdates(serverAuthContext(jwtService, serviceAuthName), &emptypb.Empty{})
+	userUpdatesClient, err := authorizationClient.SubscribeUserUpdates(serverAuthContext(ctx, jwtService, serviceAuthName), &emptypb.Empty{})
 	if err != nil {
 		log.Errorf("Unable to subscribe to user updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
 		time.Sleep(retryAfter)
-		ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+		ProcessUserUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 		return
 	}
 	log.Info("Successfully subscribed to user updates from authorization server.")
@@ -156,29 +158,30 @@ func ProcessUserUpdates(
 		} else if err == io.EOF {
 			log.Infof("User updates stream ended. Retrying in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
-			ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+			ProcessUserUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		} else {
 			log.Errorf("User updates: %v.", err)
 			log.Infof("Retrying connection in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
-			ProcessUserUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+			ProcessUserUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		}
 	}
 }
 
 func ProcessRoleUpdates(
+	ctx context.Context,
 	authorizationClient pb.AuthorizationServiceClient,
 	interceptor *interceptor.AuthInterceptor,
 	jwtService service.JWTService,
 	serviceAuthName string,
 ) {
-	roleUpdatesClient, err := authorizationClient.SubscribeRoleUpdates(serverAuthContext(jwtService, serviceAuthName), &emptypb.Empty{})
+	roleUpdatesClient, err := authorizationClient.SubscribeRoleUpdates(serverAuthContext(ctx, jwtService, serviceAuthName), &emptypb.Empty{})
 	if err != nil {
 		log.Errorf("Unable to subscribe to role updates from authorization client. Retrying in %d seconds", retryAfter/time.Second)
 		time.Sleep(retryAfter)
-		ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+		ProcessRoleUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 		return
 	}
 	log.Info("Successfully subscribed to role updates from authorization server.")
@@ -193,23 +196,23 @@ func ProcessRoleUpdates(
 		} else if err == io.EOF {
 			log.Infof("Role updates stream ended. Retrying in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
-			ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+			ProcessRoleUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		} else {
 			log.Errorf("Role Updates: %v.", err)
 			log.Infof("Retrying connection in %d seconds", retryAfter/time.Second)
 			time.Sleep(retryAfter)
-			ProcessRoleUpdates(authorizationClient, interceptor, jwtService, serviceAuthName)
+			ProcessRoleUpdates(ctx, authorizationClient, interceptor, jwtService, serviceAuthName)
 			return
 		}
 	}
 }
 
-func serverAuthContext(jwtService service.JWTService, authorizer string) context.Context {
+func serverAuthContext(ctx context.Context, jwtService service.JWTService, authorizer string) context.Context {
 	md := metadata.New(
 		map[string]string{
 			"authorization": fmt.Sprintf(
-				"Bearer %s", generateTemporaryServerToken(jwtService, authorizer),
+				"Bearer %s", generateTemporaryServerToken(ctx, jwtService, authorizer),
 			),
 		},
 	)
@@ -235,7 +238,7 @@ func InsecureOtelGrpcDialOpts() []grpc.DialOption {
 	}
 }
 
-func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, serviceName string, publicRPCs map[string]struct{}) (*grpc.Server, *runtime.ServeMux, []grpc.DialOption, error) {
+func CreateGrpcServerWithAuth(ctx context.Context, jwt service.JWTService, accountsAddress string, serviceName string, publicRPCs map[string]struct{}) (*grpc.Server, *runtime.ServeMux, []grpc.DialOption, error) {
 	if publicRPCs == nil {
 		publicRPCs = make(map[string]struct{})
 	}
@@ -253,11 +256,11 @@ func CreateGrpcServerWithAuth(jwt service.JWTService, accountsAddress string, se
 	authInterceptor := interceptor.NewAuthInterceptor(
 		jwt,
 		publicRPCs,
-		GetPermissions(pb.NewAuthorizationServiceClient(conn), jwt, authName),
+		GetPermissions(ctx, pb.NewAuthorizationServiceClient(conn), jwt, authName),
 	)
 
-	go ProcessRoleUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
-	go ProcessUserUpdates(pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
+	go ProcessRoleUpdates(ctx, pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
+	go ProcessUserUpdates(ctx, pb.NewAuthorizationServiceClient(conn), authInterceptor, jwt, authName)
 
 	return grpc.NewServer(
 			grpc.ChainUnaryInterceptor(authInterceptor.Unary(), helpers.UnaryLogRequest()),

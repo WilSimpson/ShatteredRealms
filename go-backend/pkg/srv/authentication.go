@@ -9,11 +9,18 @@ import (
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
+)
+
+var (
+	ErrorEmailEmpty         = status.Error(codes.InvalidArgument, "Email cannot be empty")
+	ErrorInvalidEmailOrPass = status.Error(codes.Unauthenticated, "Invalid username or password")
+	ErrorCreatingToken      = status.Error(codes.Internal, "Error creating token")
 )
 
 type authenticationServiceServer struct {
@@ -41,6 +48,7 @@ func (s *authenticationServiceServer) Register(
 	ctx context.Context,
 	message *pb.RegisterAccountMessage,
 ) (*emptypb.Empty, error) {
+
 	user := &accountModel.User{
 		FirstName: message.FirstName,
 		LastName:  message.LastName,
@@ -51,6 +59,9 @@ func (s *authenticationServiceServer) Register(
 
 	user, err := s.userService.Create(ctx, user)
 	if err != nil {
+		span := trace.SpanFromContext(ctx)
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "creating user")
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -61,8 +72,12 @@ func (s *authenticationServiceServer) Login(
 	ctx context.Context,
 	message *pb.LoginMessage,
 ) (*pb.LoginResponse, error) {
+	span := trace.SpanFromContext(ctx)
+
 	if message.Email == "" {
-		return nil, status.Error(codes.InvalidArgument, "Email cannot be empty")
+		span.RecordError(ErrorEmailEmpty)
+		span.SetStatus(otelcodes.Error, "no email")
+		return nil, ErrorEmailEmpty
 	}
 
 	if message.Password == "" {
@@ -70,14 +85,23 @@ func (s *authenticationServiceServer) Login(
 	}
 
 	user := s.userService.FindByEmail(ctx, message.Email)
-	if !user.Exists() || user.Login(message.Password) != nil {
-		return nil, status.Error(codes.Unauthenticated, "Invalid username or password")
+	if !user.Exists() {
+		span.RecordError(ErrorInvalidEmailOrPass)
+		span.SetStatus(otelcodes.Error, "email not used")
 	}
 
-	token, err := s.tokenForUser(user)
+	if user.Login(message.Password) != nil {
+		span.RecordError(ErrorInvalidEmailOrPass)
+		span.SetStatus(otelcodes.Error, "invalid password")
+		return nil, ErrorInvalidEmailOrPass
+	}
+
+	token, err := s.tokenForUser(ctx, user)
 	if err != nil {
 		log.Errorf("error signing jwt: %v", err)
-		return nil, status.Error(codes.Internal, "Error signing validation token")
+		span.RecordError(ErrorCreatingToken)
+		span.SetStatus(otelcodes.Error, "creating token")
+		return nil, ErrorCreatingToken
 	}
 
 	return &pb.LoginResponse{
@@ -93,7 +117,7 @@ func (s *authenticationServiceServer) Login(
 	}, nil
 }
 
-func (s *authenticationServiceServer) tokenForUser(u *accountModel.User) (t string, err error) {
+func (s *authenticationServiceServer) tokenForUser(ctx context.Context, u *accountModel.User) (t string, err error) {
 	claims := jwt.MapClaims{
 		"sub":                u.ID,
 		"preferred_username": u.Username,
@@ -102,6 +126,6 @@ func (s *authenticationServiceServer) tokenForUser(u *accountModel.User) (t stri
 		//"email":       u.Email,
 	}
 
-	t, err = s.jwtService.Create(time.Hour, "shatteredrealmsonline.com/accounts/v1", claims)
+	t, err = s.jwtService.Create(ctx, time.Hour, "sro.com/accounts/v1", claims)
 	return t, err
 }
