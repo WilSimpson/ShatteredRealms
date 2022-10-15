@@ -8,7 +8,6 @@ import (
 	accountService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -28,7 +27,6 @@ type authenticationServiceServer struct {
 	userService       accountService.UserService
 	permissionService accountService.PermissionService
 	jwtService        service.JWTService
-	tracer            trace.Tracer
 }
 
 func NewAuthenticationServiceServer(
@@ -40,7 +38,6 @@ func NewAuthenticationServiceServer(
 		userService:       u,
 		permissionService: permissionService,
 		jwtService:        jwt,
-		tracer:            otel.Tracer("authentication"),
 	}
 }
 
