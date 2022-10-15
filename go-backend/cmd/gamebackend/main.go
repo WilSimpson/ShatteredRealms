@@ -1,22 +1,25 @@
 package main
 
 import (
+	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
+	"github.com/uptrace/uptrace-go/uptrace"
 	"net"
 	"net/http"
 )
 
 type appConfig struct {
-	GameBackend config.Server `yaml:"gameBackend"`
-	Accounts    config.Server `yaml:"accounts"`
-	Characters  config.Server `yaml:"characters"`
-	KeyDir      string        `yaml:"keyDir"`
-	DBFile      string        `yaml:"dbFile"`
-	Agones      agonesConfig  `yaml:"agones"`
+	GameBackend config.Server        `yaml:"gameBackend"`
+	Accounts    config.Server        `yaml:"accounts"`
+	Characters  config.Server        `yaml:"characters"`
+	KeyDir      string               `yaml:"keyDir"`
+	DBFile      string               `yaml:"dbFile"`
+	Agones      agonesConfig         `yaml:"agones"`
+	Uptrace     config.UptraceConfig `yaml:"uptrace"`
 }
 
 type agonesConfig struct {
@@ -87,6 +90,14 @@ func init() {
 }
 
 func main() {
+	ctx := context.Background()
+	uptrace.ConfigureOpentelemetry(
+		uptrace.WithDSN(conf.Uptrace.DSN()),
+		uptrace.WithServiceName("gamebackend_service"),
+		uptrace.WithServiceVersion("v1.0.0"),
+	)
+	defer uptrace.Shutdown(ctx)
+
 	jwtService, err := service.NewJWTService(conf.KeyDir)
 	helpers.Check(err, "jwt service")
 

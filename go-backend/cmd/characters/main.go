@@ -62,7 +62,7 @@ func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
-		uptrace.WithServiceName("accounts_service"),
+		uptrace.WithServiceName("characters_service"),
 		uptrace.WithServiceVersion("v1.0.0"),
 	)
 	defer uptrace.Shutdown(ctx)

@@ -22,6 +22,7 @@ func NewServer(
 	ctx := context.Background()
 
 	grpcServer, gwmux, opts, err := srv.CreateGrpcServerWithAuth(
+		ctx,
 		jwt,
 		conf.Accounts.Remote.Address(),
 		"gamebackend",

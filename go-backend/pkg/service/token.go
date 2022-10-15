@@ -53,7 +53,11 @@ func NewJWTService(keyDir string) (JWTService, error) {
 // the token string is returned with no error. Otherwise the string will be empty and the error will be set.
 func (j jwtService) Create(ctx context.Context, ttl time.Duration, issuer string, additionalClaims jwt.MapClaims) (string, error) {
 	_, span := j.tracer.Start(ctx, "create")
-	span.SetAttributes(attribute.String("id", additionalClaims["id"].(string)), attribute.String("issuer", issuer), attribute.Int64("duration", ttl.Milliseconds()))
+	attributes := []attribute.KeyValue{attribute.String("issuer", issuer), attribute.Int64("duration", ttl.Milliseconds())}
+	if val, ok := additionalClaims["id"]; ok {
+		attributes = append(attributes, attribute.String("id", val.(string)))
+	}
+	span.SetAttributes(attributes...)
 	defer span.End()
 
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(j.privateKey)
