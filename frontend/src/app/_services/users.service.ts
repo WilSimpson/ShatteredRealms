@@ -34,9 +34,9 @@ export class UsersService {
   }
 
 
-  updateUserPassword(id: number, password: string): Observable<any> {
-    return this.http.put(`${environment.ACCOUNT_API_URL}/users/${id}`, {
-      password
+  updateUserPassword(id: number, currentPassword: string, newPassword: string): Observable<any> {
+    return this.http.put(`${environment.ACCOUNT_API_URL}/users/${id}/password`, {
+      currentPassword, newPassword
     });
   }
 

@@ -6,13 +6,13 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service ChatService {
-  rpc Connect(ConnectRequest) returns (stream ChatMessage) {
+  rpc ConnectChannel(ConnectChannelRequest) returns (stream ChatMessage) {
     option (google.api.http) = {
       get: "/v1/connect/{channel_id}"
     };
   }
 
-  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty) {
+  rpc SendChatMessage(SendChatMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/message/{channel_id}"
       body: "*"
@@ -20,7 +20,7 @@ service ChatService {
   }
 }
 
-message ConnectRequest {
+message ConnectChannelRequest {
   uint64 channel_id = 1;
 }
 
@@ -29,7 +29,7 @@ message ChatMessage {
   string sender = 2;
 }
 
-message SendMessageRequest {
+message SendChatMessageRequest {
   uint64 channel_id = 1;
   string message = 2;
 }

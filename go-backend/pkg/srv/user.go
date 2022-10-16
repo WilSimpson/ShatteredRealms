@@ -3,7 +3,6 @@ package srv
 import (
 	"context"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	utilService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
@@ -81,7 +80,7 @@ func (s *userServiceServer) Get(
 
 func (s *userServiceServer) Edit(
 	ctx context.Context,
-	message *pb.UserDetails,
+	message *pb.EditUserDetailsRequest,
 ) (*emptypb.Empty, error) {
 	can, err := interceptor.AuthorizedForTarget(ctx, s.jwtService, uint(message.UserId))
 	if err != nil || !can {
@@ -93,15 +92,7 @@ func (s *userServiceServer) Edit(
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
-	newUserData := model.User{
-		FirstName: message.FirstName,
-		LastName:  message.LastName,
-		Username:  message.Username,
-		Email:     message.Email,
-		Password:  message.Password,
-	}
-
-	err = user.UpdateInfo(newUserData)
+	err = user.UpdateInfo(message)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -172,6 +163,34 @@ func (s *userServiceServer) SetStatus(ctx context.Context, message *pb.StatusReq
 		if !user.Exists() {
 			return nil, status.Error(codes.Internal, "unable to update user")
 		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+func (s *userServiceServer) ChangePassword(ctx context.Context, message *pb.ChangePasswordRequest) (*emptypb.Empty, error) {
+	can, err := interceptor.AuthorizedForTarget(ctx, s.jwtService, uint(message.UserId))
+	if err != nil || !can {
+		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
+	}
+
+	user := s.userService.FindById(ctx, uint(message.UserId))
+	if !user.Exists() {
+		return nil, status.Error(codes.NotFound, "user not found")
+	}
+
+	err = user.Login(message.CurrentPassword)
+	if err != nil || !can {
+		return nil, status.Error(codes.FailedPrecondition, "Incorrect password")
+	}
+
+	err = user.UpdatePassword(message.NewPassword)
+	if err != nil || !can {
+		return nil, status.Error(codes.FailedPrecondition, "Invalid new password")
+	}
+
+	_, err = s.userService.Save(ctx, user)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &emptypb.Empty{}, nil

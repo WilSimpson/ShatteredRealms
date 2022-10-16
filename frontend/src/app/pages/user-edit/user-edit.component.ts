@@ -9,13 +9,12 @@ import {AlertComponent} from "../../_components/alert/alert.component";
 import {User} from "../../models/user.model";
 import {UsersService} from "../../_services/users.service";
 import {AuthorizationService} from "../../_services/authorization.service";
-import {map, tap} from "rxjs/operators";
 import {Role} from "../../models/role.model";
-import {Observable, of} from "rxjs";
 import {UserPermission} from "../../models/user-permission.model";
 import {MdbModalRef, MdbModalService} from "mdb-angular-ui-kit/modal";
 import {ModalComponent} from "../../_components/modal/modal.component";
 import {ModalSelectComponent} from "../../_components/modal-select/modal-select.component";
+import {catchError} from "rxjs";
 
 @Component({
   selector: 'app-user-edit',
@@ -112,7 +111,7 @@ export class UserEditComponent implements OnInit {
               },
               stacking: true
             })
-          } else {
+        } else {
             this.notificationService.open(AlertComponent, {
               data: {
                 message: 'Unknown server error. Please try again later.',
@@ -211,7 +210,7 @@ export class UserEditComponent implements OnInit {
       return;
     }
 
-    if (this.updatePasswordForm.value.password !== this.updatePasswordForm.value.confirmPassword) {
+    if (this.updatePasswordForm.get('newPassword')?.value !== this.updatePasswordForm.get('confirmNewPassword')?.value) {
       this.notificationService.open(AlertComponent, {
         data: {
           message: 'Passwords do not match',
@@ -224,27 +223,27 @@ export class UserEditComponent implements OnInit {
       return;
     }
 
-    this.loadingUpdateDetails = true;
+    this.loadingUpdatePassword = true;
 
     this.usersService.updateUserPassword(
       this.id,
-      this.updateDetailsForm.value.password,
+      this.updatePasswordForm.get('currentPassword')?.value,
+      this.updatePasswordForm.get('newPassword')?.value,
     ).subscribe((success) => {
-      if (success.errors) {
-        for (const e of success.errors) {
-          this.notificationService.open(AlertComponent, {
-            data: {
-              message: `${e.text}: ${e.info}`,
-              color: 'warning',
-            },
-            stacking: true,
-            position: "top-center",
-          })
-        }
+      console.log('here');
+      if (success.error) {
+        this.notificationService.open(AlertComponent, {
+          data: {
+            message: success.error.message,
+            color: 'warning',
+          },
+          stacking: true,
+          position: "top-center",
+        })
       } else {
         this.notificationService.open(AlertComponent, {
           data: {
-            message: 'Account password!',
+            message: 'Account password updated!',
             color: 'success',
           },
           stacking: true,
@@ -252,6 +251,7 @@ export class UserEditComponent implements OnInit {
         })
       }
     }, (error) => {
+      console.log('there')
       this.notificationService.open(AlertComponent, {
         data: {
           message: error.error.message,
@@ -260,14 +260,14 @@ export class UserEditComponent implements OnInit {
         stacking: true,
         position: "top-center",
       })
+    }, () => {
+      this.updatePasswordForm.reset();
     }).add(() => {
       this.loadingUpdatePassword = false;
     });
   }
 
-  isAdmin()
-    :
-    boolean {
+  isAdmin(): boolean {
     return this.authService.hasAnyRole(["SUPER ADMIN", "ADMIN"])
   }
 

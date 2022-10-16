@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConnectionServiceClient interface {
-	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
+	ConnectGameServer(ctx context.Context, in *ConnectGameServerRequest, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
 }
 
 type connectionServiceClient struct {
@@ -33,9 +33,9 @@ func NewConnectionServiceClient(cc grpc.ClientConnInterface) ConnectionServiceCl
 	return &connectionServiceClient{cc}
 }
 
-func (c *connectionServiceClient) Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error) {
-	out := new(ConnectResponse)
-	err := c.cc.Invoke(ctx, "/sro.gamebackend.ConnectionService/Connect", in, out, opts...)
+func (c *connectionServiceClient) ConnectGameServer(ctx context.Context, in *ConnectGameServerRequest, opts ...grpc.CallOption) (*ConnectGameServerResponse, error) {
+	out := new(ConnectGameServerResponse)
+	err := c.cc.Invoke(ctx, "/sro.gamebackend.ConnectionService/ConnectGameServer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *connectionServiceClient) Connect(ctx context.Context, in *ConnectReques
 // All implementations must embed UnimplementedConnectionServiceServer
 // for forward compatibility
 type ConnectionServiceServer interface {
-	Connect(context.Context, *ConnectRequest) (*ConnectResponse, error)
+	ConnectGameServer(context.Context, *ConnectGameServerRequest) (*ConnectGameServerResponse, error)
 	mustEmbedUnimplementedConnectionServiceServer()
 }
 
@@ -54,8 +54,8 @@ type ConnectionServiceServer interface {
 type UnimplementedConnectionServiceServer struct {
 }
 
-func (UnimplementedConnectionServiceServer) Connect(context.Context, *ConnectRequest) (*ConnectResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Connect not implemented")
+func (UnimplementedConnectionServiceServer) ConnectGameServer(context.Context, *ConnectGameServerRequest) (*ConnectGameServerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectGameServer not implemented")
 }
 func (UnimplementedConnectionServiceServer) mustEmbedUnimplementedConnectionServiceServer() {}
 
@@ -70,20 +70,20 @@ func RegisterConnectionServiceServer(s grpc.ServiceRegistrar, srv ConnectionServ
 	s.RegisterService(&ConnectionService_ServiceDesc, srv)
 }
 
-func _ConnectionService_Connect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectRequest)
+func _ConnectionService_ConnectGameServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConnectGameServerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConnectionServiceServer).Connect(ctx, in)
+		return srv.(ConnectionServiceServer).ConnectGameServer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sro.gamebackend.ConnectionService/Connect",
+		FullMethod: "/sro.gamebackend.ConnectionService/ConnectGameServer",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConnectionServiceServer).Connect(ctx, req.(*ConnectRequest))
+		return srv.(ConnectionServiceServer).ConnectGameServer(ctx, req.(*ConnectGameServerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,8 +96,8 @@ var ConnectionService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ConnectionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Connect",
-			Handler:    _ConnectionService_Connect_Handler,
+			MethodName: "ConnectGameServer",
+			Handler:    _ConnectionService_ConnectGameServer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

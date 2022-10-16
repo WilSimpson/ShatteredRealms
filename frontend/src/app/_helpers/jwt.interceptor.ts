@@ -5,7 +5,7 @@ import {
   HttpEvent,
   HttpInterceptor, HttpResponse
 } from '@angular/common/http';
-import {catchError, EMPTY, Observable} from 'rxjs';
+import {catchError, EMPTY, Observable, of} from 'rxjs';
 import { AuthenticationService } from '../_services/authentication.service';
 import {Router} from "@angular/router";
 import {MdbNotificationService} from "mdb-angular-ui-kit/notification";
@@ -43,9 +43,10 @@ export class JwtInterceptor implements HttpInterceptor {
             position: "top-center",
           })
         });
+        return EMPTY;
       }
 
-      return EMPTY;
+      throw err;
     }));
   }
 }

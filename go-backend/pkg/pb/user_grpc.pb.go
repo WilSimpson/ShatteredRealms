@@ -25,7 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	GetAll(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetAllUsersResponse, error)
 	Get(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*GetUserResponse, error)
-	Edit(ctx context.Context, in *UserDetails, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetStatus(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*StatusResponse, error)
@@ -58,9 +59,18 @@ func (c *userServiceClient) Get(ctx context.Context, in *GetUserMessage, opts ..
 	return out, nil
 }
 
-func (c *userServiceClient) Edit(ctx context.Context, in *UserDetails, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *userServiceClient) Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/Edit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/ChangePassword", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +119,8 @@ func (c *userServiceClient) SetStatus(ctx context.Context, in *StatusRequest, op
 type UserServiceServer interface {
 	GetAll(context.Context, *emptypb.Empty) (*GetAllUsersResponse, error)
 	Get(context.Context, *GetUserMessage) (*GetUserResponse, error)
-	Edit(context.Context, *UserDetails) (*emptypb.Empty, error)
+	Edit(context.Context, *EditUserDetailsRequest) (*emptypb.Empty, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error)
 	Ban(context.Context, *GetUserMessage) (*emptypb.Empty, error)
 	UnBan(context.Context, *GetUserMessage) (*emptypb.Empty, error)
 	GetStatus(context.Context, *GetUserMessage) (*StatusResponse, error)
@@ -127,8 +138,11 @@ func (UnimplementedUserServiceServer) GetAll(context.Context, *emptypb.Empty) (*
 func (UnimplementedUserServiceServer) Get(context.Context, *GetUserMessage) (*GetUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedUserServiceServer) Edit(context.Context, *UserDetails) (*emptypb.Empty, error) {
+func (UnimplementedUserServiceServer) Edit(context.Context, *EditUserDetailsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Edit not implemented")
+}
+func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedUserServiceServer) Ban(context.Context, *GetUserMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ban not implemented")
@@ -192,7 +206,7 @@ func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _UserService_Edit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserDetails)
+	in := new(EditUserDetailsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -204,7 +218,25 @@ func _UserService_Edit_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/sro.accounts.UserService/Edit",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Edit(ctx, req.(*UserDetails))
+		return srv.(UserServiceServer).Edit(ctx, req.(*EditUserDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sro.accounts.UserService/ChangePassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -299,6 +331,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Edit",
 			Handler:    _UserService_Edit_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _UserService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "Ban",

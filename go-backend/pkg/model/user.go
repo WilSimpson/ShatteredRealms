@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"net/mail"
 	"time"
 
@@ -81,115 +82,121 @@ func (u *User) Exists() bool {
 }
 
 // UpdateInfo Updates the info of the user if the fields are present and valid. If any field is present but not valid
-// then the user will not be updated and and error is returned. If there are no errors, then the non-empty fields for
-// the FirstName, LastName, Email, and Username will be updated.
-func (u *User) UpdateInfo(newUser User) error {
-	updateFirstName := false
-	updateLastName := false
-	updateEmail := false
-	updateUsername := false
+// then an error is returned. If there are no errors, then the non-nil fields for the FirstName, LastName, Email, and
+// Username will be updated.
+func (u *User) UpdateInfo(userDetails *pb.EditUserDetailsRequest) error {
 
-	if newUser.FirstName != "" {
-		if err := newUser.validateFirstName(); err != nil {
+	if userDetails.FirstName != nil {
+		if err := u.updateFirstName(userDetails.FirstName.Value); err != nil {
 			return err
 		}
-
-		updateFirstName = true
 	}
 
-	if newUser.LastName != "" {
-		if err := newUser.validateLastName(); err != nil {
+	if userDetails.LastName != nil {
+		if err := u.updateLastsName(userDetails.LastName.Value); err != nil {
 			return err
 		}
-
-		updateLastName = true
 	}
 
-	if newUser.Username != "" {
-		if err := newUser.validateUsername(); err != nil {
+	if userDetails.Username != nil {
+		if err := u.updateUsername(userDetails.Username.Value); err != nil {
 			return err
 		}
-
-		updateUsername = true
 	}
 
-	if newUser.Email != "" {
-		if _, err := mail.ParseAddress(newUser.Email); err != nil {
+	if userDetails.Email != nil {
+		if err := u.updateEmail(userDetails.Email.Value); err != nil {
 			return err
 		}
-
-		updateEmail = true
-	}
-
-	if updateFirstName {
-		u.FirstName = newUser.FirstName
-	}
-	if updateLastName {
-		u.LastName = newUser.LastName
-	}
-	if updateUsername {
-		u.Username = newUser.Username
-	}
-	if updateEmail {
-		u.Email = newUser.Email
 	}
 
 	return nil
 }
 
 func (u *User) validateFirstName() error {
-	if u.FirstName == "" {
+	return u.updateFirstName(u.FirstName)
+}
+
+func (u *User) updateFirstName(val string) error {
+	if val == "" {
 		return fmt.Errorf("first name cannot be empty")
 	}
 
-	if len(u.FirstName) > MaxFirstNameLength {
+	if len(val) > MaxFirstNameLength {
 		return fmt.Errorf("first name cannot be longer than 50 characters")
 	}
 
+	u.FirstName = val
 	return nil
 }
 
 func (u *User) validateLastName() error {
-	if u.LastName == "" {
+	return u.updateLastsName(u.LastName)
+}
+
+func (u *User) updateLastsName(val string) error {
+	if val == "" {
 		return fmt.Errorf("last name cannot be empty")
 	}
 
-	if len(u.LastName) > MaxLastNameLength {
+	if len(val) > MaxLastNameLength {
 		return fmt.Errorf("last name cannot be longer than 50 characters")
 	}
 
+	u.LastName = val
 	return nil
 }
-
 func (u *User) validatePassword() error {
-	if u.Password == "" {
+	return u.UpdatePassword(u.Password)
+}
+
+func (u *User) UpdatePassword(val string) error {
+	if val == "" {
 		return fmt.Errorf("cannot create a user without a password")
 	}
 
-	if len(u.Password) < MinPasswordLength {
+	if len(val) < MinPasswordLength {
 		return fmt.Errorf("password less than minimum length of %d", MinPasswordLength)
 	}
 
-	if len(u.Password) > MaxPasswordLength {
+	if len(val) > MaxPasswordLength {
 		return fmt.Errorf("password exeeded maximum length of %d", MaxPasswordLength)
 	}
 
+	u.Password = val
 	return nil
 }
-
 func (u *User) validateUsername() error {
-	if u.Username == "" {
+	return u.updateUsername(u.Username)
+}
+
+func (u *User) updateUsername(val string) error {
+	if val == "" {
 		return fmt.Errorf("cannot create a user without a username")
 	}
 
-	if len(u.Username) < MinUsernameLength {
+	if len(val) < MinUsernameLength {
 		return fmt.Errorf("username less than minimum length of %d", MinUsernameLength)
 	}
 
-	if len(u.Username) > MaxUsernameLength {
+	if len(val) > MaxUsernameLength {
 		return fmt.Errorf("username exeeded maximum length of %d", MaxUsernameLength)
 	}
 
+	u.Username = val
+	return nil
+}
+
+func (u *User) validateEmail() error {
+	return u.updateEmail(u.Email)
+}
+
+func (u *User) updateEmail(val string) error {
+	if _, err := mail.ParseAddress(val); err != nil {
+		return err
+	}
+
+	u.Email = val
 	return nil
 }
 

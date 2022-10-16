@@ -5,6 +5,7 @@ option go_package = "pkg/pb";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "authorization.proto";
+import "google/protobuf/wrappers.proto";
 
 service UserService {
   rpc GetAll(google.protobuf.Empty) returns (GetAllUsersResponse) {
@@ -19,9 +20,16 @@ service UserService {
     };
   }
 
-  rpc Edit(UserDetails) returns (google.protobuf.Empty) {
+  rpc Edit(EditUserDetailsRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/v1/users/{user_id}"
+      body: "*"
+    };
+  }
+
+  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/users/{user_id}/password"
       body: "*"
     };
   }
@@ -87,13 +95,18 @@ message GetAllUsersResponse {
   repeated UserMessage users = 1;
 }
 
-message UserDetails {
+message EditUserDetailsRequest {
   uint64 user_id = 1;
-  string email = 2;
-  string password = 3;
-  string username = 4;
-  string first_name = 5;
-  string last_name = 6;
+  google.protobuf.StringValue email = 2;
+  google.protobuf.StringValue username = 4;
+  google.protobuf.StringValue first_name = 5;
+  google.protobuf.StringValue last_name = 6;
+}
+
+message ChangePasswordRequest {
+  uint64 user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
 }
 
 message StatusResponse {

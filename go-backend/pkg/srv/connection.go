@@ -40,9 +40,9 @@ func NewConnectionServiceServer(
 	}
 }
 
-func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.ConnectRequest) (*pb.ConnectResponse, error) {
+func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.ConnectGameServerRequest) (*pb.ConnectGameServerResponse, error) {
 	if s.localhostMode {
-		return &pb.ConnectResponse{
+		return &pb.ConnectGameServerResponse{
 			Address: "127.0.0.1",
 			Port:    7777,
 		}, nil
@@ -96,7 +96,7 @@ func (s *connectionServiceServer) Connect(ctx context.Context, request *pb.Conne
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.ConnectResponse{
+	return &pb.ConnectGameServerResponse{
 		Address: allocatorResp.Address,
 		Port:    uint32(allocatorResp.Ports[0].Port),
 	}, nil

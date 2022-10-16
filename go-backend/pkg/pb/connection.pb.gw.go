@@ -31,8 +31,8 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_ConnectionService_Connect_0(ctx context.Context, marshaler runtime.Marshaler, client ConnectionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ConnectRequest
+func request_ConnectionService_ConnectGameServer_0(ctx context.Context, marshaler runtime.Marshaler, client ConnectionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ConnectGameServerRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -52,13 +52,13 @@ func request_ConnectionService_Connect_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "character_id", err)
 	}
 
-	msg, err := client.Connect(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ConnectGameServer(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_ConnectionService_Connect_0(ctx context.Context, marshaler runtime.Marshaler, server ConnectionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ConnectRequest
+func local_request_ConnectionService_ConnectGameServer_0(ctx context.Context, marshaler runtime.Marshaler, server ConnectionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ConnectGameServerRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -78,7 +78,7 @@ func local_request_ConnectionService_Connect_0(ctx context.Context, marshaler ru
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "character_id", err)
 	}
 
-	msg, err := server.Connect(ctx, &protoReq)
+	msg, err := server.ConnectGameServer(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -89,19 +89,19 @@ func local_request_ConnectionService_Connect_0(ctx context.Context, marshaler ru
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterConnectionServiceHandlerFromEndpoint instead.
 func RegisterConnectionServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ConnectionServiceServer) error {
 
-	mux.Handle("GET", pattern_ConnectionService_Connect_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ConnectionService_ConnectGameServer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.gamebackend.ConnectionService/Connect", runtime.WithHTTPPathPattern("/v1/connect/{character_id}"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.gamebackend.ConnectionService/ConnectGameServer", runtime.WithHTTPPathPattern("/v1/connect/{character_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ConnectionService_Connect_0(ctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ConnectionService_ConnectGameServer_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -109,7 +109,7 @@ func RegisterConnectionServiceHandlerServer(ctx context.Context, mux *runtime.Se
 			return
 		}
 
-		forward_ConnectionService_Connect_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ConnectionService_ConnectGameServer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -154,24 +154,24 @@ func RegisterConnectionServiceHandler(ctx context.Context, mux *runtime.ServeMux
 // "ConnectionServiceClient" to call the correct interceptors.
 func RegisterConnectionServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ConnectionServiceClient) error {
 
-	mux.Handle("GET", pattern_ConnectionService_Connect_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ConnectionService_ConnectGameServer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/sro.gamebackend.ConnectionService/Connect", runtime.WithHTTPPathPattern("/v1/connect/{character_id}"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/sro.gamebackend.ConnectionService/ConnectGameServer", runtime.WithHTTPPathPattern("/v1/connect/{character_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ConnectionService_Connect_0(ctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ConnectionService_ConnectGameServer_0(ctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ConnectionService_Connect_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ConnectionService_ConnectGameServer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -179,9 +179,9 @@ func RegisterConnectionServiceHandlerClient(ctx context.Context, mux *runtime.Se
 }
 
 var (
-	pattern_ConnectionService_Connect_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "connect", "character_id"}, ""))
+	pattern_ConnectionService_ConnectGameServer_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "connect", "character_id"}, ""))
 )
 
 var (
-	forward_ConnectionService_Connect_0 = runtime.ForwardResponseMessage
+	forward_ConnectionService_ConnectGameServer_0 = runtime.ForwardResponseMessage
 )
