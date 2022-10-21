@@ -1,7 +1,7 @@
 FROM node:18-alpine As builder
 
 WORKDIR /usr/src/app
-COPY package.json package-lock. mdb-angular-ui-kit-2.3.0.tgz ./
+COPY package.json package-lock.json mdb-angular-ui-kit-2.3.0.tgz ./
 RUN npm install
 COPY . .
 

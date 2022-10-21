@@ -168,13 +168,6 @@ istioctl kube-inject -f qa/characters.yaml | kubectl apply -f -
 istioctl kube-inject -f dev/characters.yaml | kubectl apply -f -
 ```
 
-## Gamebackend
-To install the gamebackend services, simply apply the configurations
-```
-istioctl kube-inject -f prod/gamebackend.yaml | kubectl apply -f -
-istioctl kube-inject -f qa/gamebackend.yaml | kubectl apply -f -
-istioctl kube-inject -f dev/gamebackend.yaml | kubectl apply -f -
-```
 
 ## Frontend
 To install the frontend services, simply apply the configurations
@@ -210,7 +203,7 @@ Apply the production fleet
 kubectl apply -f prod/fleet.yaml
 ```
 
-## Server Finder
+## Gamebackend
 Copy the allocator ca cert to the namespaces `sro` `sro-qa` and `sro-dev` namespaces.
 ```bash
 kubectl delete secret allocator-tls-ca -n sro
@@ -221,8 +214,8 @@ kubectl get secret allocator-tls-ca -n agones-system -o yaml | sed 's/namespace:
 kubectl get secret allocator-tls-ca -n agones-system -o yaml | sed 's/namespace: .*/namespace: sro-dev/' | kubectl apply -f -
 ```
 
-Apply the configurations
-```bash
+To install the gamebackend services, simply apply the configurations
+```
 istioctl kube-inject -f prod/gamebackend.yaml | kubectl apply -f -
 istioctl kube-inject -f qa/gamebackend.yaml | kubectl apply -f -
 istioctl kube-inject -f dev/gamebackend.yaml | kubectl apply -f -

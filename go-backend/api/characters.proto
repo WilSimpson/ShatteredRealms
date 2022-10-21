@@ -77,7 +77,7 @@ message DeleteCharacterRequest {
 
 message CreateCharacterRequest {
   uint64 user_id = 1;
-  google.protobuf.StringValue name = 2;
+  string name = 2;
   uint64 gender = 3;
   uint64 realm = 4;
 }

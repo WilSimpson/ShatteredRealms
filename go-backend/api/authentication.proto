@@ -5,6 +5,7 @@ option go_package = "pkg/pb";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "authorization.proto";
+import "google/protobuf/wrappers.proto";
 
 service AuthenticationService {
   rpc Register(RegisterAccountMessage) returns (google.protobuf.Empty) {
@@ -36,7 +37,7 @@ message LoginResponse {
   string username = 6;
   string created_at = 7;
   repeated UserRole roles = 8;
-  string banned_at = 9;
+  google.protobuf.StringValue bannedAt = 9;
 }
 
 message RegisterAccountMessage {

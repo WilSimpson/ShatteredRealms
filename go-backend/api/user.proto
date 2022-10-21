@@ -72,10 +72,8 @@ message UserMessage {
   string username = 3;
   string createdAt = 4;
   repeated UserRole roles = 5;
-  string bannedAt = 6;
-
-  // The character id that is currently playing. If 0, then the user is not playing online.
-  uint64 current_character_id = 7;
+  google.protobuf.StringValue bannedAt = 6;
+  google.protobuf.UInt64Value current_character_id = 7;
 }
 
 message GetUserResponse {
@@ -87,8 +85,8 @@ message GetUserResponse {
   string createdAt = 6;
   repeated UserRole roles = 7;
   repeated UserPermission permissions = 8;
-  string bannedAt = 9;
-  uint64 current_character_id = 10;
+  google.protobuf.StringValue bannedAt = 9;
+  google.protobuf.UInt64Value current_character_id = 10;
 }
 
 message GetAllUsersResponse {
@@ -111,12 +109,12 @@ message ChangePasswordRequest {
 
 message StatusResponse {
   // The character id that is currently playing. If 0, then the user is not signed in.
-  uint64 character_id = 1;
+  google.protobuf.UInt64Value character_id = 1;
 }
 
 message StatusRequest {
   uint64 user_id = 1;
 
   // The character id that is currently playing. If 0, then the user is not signed in.
-  uint64 character_id = 2;
+  google.protobuf.UInt64Value character_id = 2;
 }

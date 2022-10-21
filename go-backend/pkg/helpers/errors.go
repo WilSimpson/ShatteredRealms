@@ -1,9 +1,12 @@
 package helpers
 
-import log "github.com/sirupsen/logrus"
+import (
+    "context"
+    log "github.com/sirupsen/logrus"
+)
 
-func Check(err error, errContext string) {
-	if err != nil {
-		log.Fatalf("%s: %v", errContext, err)
-	}
+func Check(ctx context.Context, err error, errContext string) {
+    if err != nil {
+        log.WithContext(ctx).Fatalf("%s: %v", errContext, err)
+    }
 }
